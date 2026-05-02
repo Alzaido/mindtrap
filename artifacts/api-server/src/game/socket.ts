@@ -14,7 +14,7 @@ import {
   rooms,
 } from "./store";
 
-const QUESTION_TIMEOUT_MS = 12000; // 10s question + 2s buffer
+const QUESTION_TIMEOUT_MS = 17000; // 15s question + 2s buffer
 
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
@@ -305,7 +305,7 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
       text: question.text,
       options: question.options,
       category: question.category,
-      timeLimit: 10,
+      timeLimit: 15,
     },
     questionNumber: questionIndex + 1,
     totalQuestions: room.questions.length,
