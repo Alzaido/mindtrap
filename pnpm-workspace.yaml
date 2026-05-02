@@ -43,6 +43,13 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  micromatch>picomatch: '^2.3.2'
+  vite>picomatch: '^4.0.4'
+  router>path-to-regexp: '^8.4.0'
+  recharts>lodash: '^4.18.0'
+  minimatch>brace-expansion: '^2.0.3'
+  yaml: '^2.8.3'
+  vite>postcss: '^8.5.10'
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
