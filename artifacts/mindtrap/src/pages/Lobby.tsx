@@ -61,9 +61,14 @@ export default function Lobby() {
       setLocation(`/game/${roomCode}`);
     });
 
+    socket.on("room-reset", (resetRoomData: Room) => {
+      setRoom(resetRoomData);
+    });
+
     return () => {
       socket.off("room-updated");
       socket.off("game-started");
+      socket.off("room-reset");
     };
   }, [socket, isConnected, roomCode, playerName, setLocation]);
 

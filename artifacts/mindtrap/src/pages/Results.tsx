@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useLocation, useParams, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetLeaderboard } from "@workspace/api-client-react";
@@ -6,19 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useSocket } from "@/contexts/SocketContext";
 
 export default function Results() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [playerName] = useLocalStorage("mindtrap_playerName", "");
+  const { socket } = useSocket();
 
   const { data: leaderboard, isLoading } = useGetLeaderboard(roomCode || "", {
     query: { enabled: !!roomCode }
   });
 
   const handlePlayAgain = () => {
-    setLocation("/");
+    if (!socket || !roomCode) return;
+    socket.emit("reset-room", { roomCode });
+    setLocation(`/lobby/${roomCode}`);
   };
 
   const handleShare = () => {
@@ -39,9 +42,7 @@ export default function Results() {
   if (!leaderboard) return null;
 
   const top3 = leaderboard.entries.slice(0, 3);
-  const rest = leaderboard.entries.slice(3);
 
-  // Podium heights based on rank
   const getPodiumHeight = (rank: number) => {
     if (rank === 1) return "h-48 md:h-64";
     if (rank === 2) return "h-36 md:h-48";
@@ -54,7 +55,6 @@ export default function Results() {
     return "bg-amber-700 border-amber-600";
   };
 
-  // Reorder top 3 for podium display (2nd, 1st, 3rd)
   const podiumOrder = [];
   if (top3[1]) podiumOrder.push(top3[1]);
   if (top3[0]) podiumOrder.push(top3[0]);
@@ -79,7 +79,7 @@ export default function Results() {
 
         {/* Podium */}
         <div className="flex justify-center items-end gap-2 w-full mt-10 h-72 md:h-80">
-          {podiumOrder.map((entry, index) => {
+          {podiumOrder.map((entry) => {
             const isFirst = entry.rank === 1;
             return (
               <motion.div 
@@ -107,7 +107,11 @@ export default function Results() {
 
         {/* Action Buttons */}
         <div className="flex gap-4 w-full mt-6">
-          <Button size="lg" onClick={handlePlayAgain} className="flex-1 text-lg font-bold h-14 rounded-xl shadow-[0_0_15px_hsl(var(--primary)/0.3)]">
+          <Button
+            size="lg"
+            onClick={handlePlayAgain}
+            className="flex-1 text-lg font-bold h-14 rounded-xl shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
+          >
             العب مرة ثانية 🎮
           </Button>
           <Button size="lg" variant="secondary" onClick={handleShare} className="h-14 px-8 rounded-xl font-bold">
@@ -148,9 +152,7 @@ export default function Results() {
                       </div>
                       <div className="text-right">
                         <div className="font-black text-xl text-primary">{entry.score}</div>
-                        <div className="text-xs text-muted-foreground opacity-70">
-                          نقطة
-                        </div>
+                        <div className="text-xs text-muted-foreground opacity-70">نقطة</div>
                       </div>
                     </CardContent>
                   </Card>

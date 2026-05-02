@@ -140,6 +140,32 @@ export function addPlayer(
   return player;
 }
 
+export function resetRoom(roomCode: string): Room | null {
+  const room = rooms.get(roomCode.toUpperCase());
+  if (!room) return null;
+
+  // Reset room state
+  room.status = "waiting";
+  room.currentQuestion = 0;
+  room.questions = [];
+  room.usedQuestionIds = new Set();
+  if (room.questionTimer) {
+    clearTimeout(room.questionTimer);
+    room.questionTimer = undefined;
+  }
+
+  // Reset all player stats
+  for (const player of room.players.values()) {
+    player.score = 0;
+    player.answers = [];
+    player.abilitiesUsed = 0;
+    player.abilities = { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 };
+    delete player.frozenUntil;
+  }
+
+  return room;
+}
+
 export function removePlayer(roomCode: string, playerName: string): void {
   const room = rooms.get(roomCode);
   if (!room) return;

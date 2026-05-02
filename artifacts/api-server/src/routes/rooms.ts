@@ -12,7 +12,7 @@ router.post("/rooms", (req, res) => {
     return;
   }
 
-  const { hostName, maxPlayers = 6, questionCount = 10 } = parsed.data;
+  const { hostName, maxPlayers = 6, questionCount = 20 } = parsed.data;
   const room = createRoom(hostName, maxPlayers, questionCount);
 
   req.log.info({ roomCode: room.code, hostName }, "Room created");

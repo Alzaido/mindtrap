@@ -10,6 +10,7 @@ import {
   roomToJSON,
   recordAnswer,
   getLeaderboard,
+  resetRoom,
   rooms,
 } from "./store";
 
@@ -231,6 +232,14 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       }
     );
 
+    socket.on("reset-room", ({ roomCode }: { roomCode: string }) => {
+      const code = roomCode.toUpperCase();
+      const room = resetRoom(code);
+      if (!room) return;
+      io.to(code).emit("room-reset", roomToJSON(room));
+      logger.info({ roomCode: code }, "Room reset for replay");
+    });
+
     socket.on("disconnect", () => {
       const info = socketRoomMap.get(socket.id);
       if (info) {
@@ -310,13 +319,13 @@ function sendQuestionResult(io: SocketIOServer, roomCode: string, questionId: st
     scores,
   });
 
-  // Advance to next question after 4 seconds
+  // Advance to next question after 10 seconds
   setTimeout(() => {
     const r = getRoom(roomCode);
     if (!r || r.status !== "playing") return;
     r.currentQuestion++;
     sendNextQuestion(io, roomCode);
-  }, 4000);
+  }, 10000);
 }
 
 function endGame(io: SocketIOServer, roomCode: string) {

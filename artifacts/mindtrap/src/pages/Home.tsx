@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCreateRoom } from "@workspace/api-client-react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
+const HOW_TO_STEPS = [
+  { icon: "👤", title: "اكتب اسمك", desc: "اختار اسم يعرفك فيه ربعك" },
+  { icon: "🚀", title: "أنشئ أو ادخل غرفة", title2: "أو ادخل كود غرفة موجودة", desc: "الهوست ينشئ الغرفة ويشارك الكود، وبقية اللاعبين يدخلون الكود" },
+  { icon: "🧠", title: "أجب بسرعة", desc: "20 سؤال خادع — كل ما جاوبت أسرع حصلت على نقاط أكثر" },
+  { icon: "😵", title: "قدرات التشويش", desc: "تشويش 😵 تجميد ❄️ انعكاس 🔄 — تُرسل لخصم عشوائي" },
+  { icon: "💣", title: "التخريب", desc: "اختار ضحيتك واسرق 50 نقطة منه — استخدم مرة واحدة فقط!" },
+  { icon: "⚡", title: "النقاط", desc: "إجابة صحيحة: 50-100 نقطة حسب السرعة. الأول يجاوب صح يكسب بونص 25 نقطة إضافية" },
+];
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const [playerName, setPlayerName] = useLocalStorage("mindtrap_playerName", "");
   const [roomCode, setRoomCode] = useState("");
+  const [showTutorial, setShowTutorial] = useState(false);
   const { toast } = useToast();
 
   const createRoomMutation = useCreateRoom();
@@ -47,7 +57,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-4 bg-background overflow-hidden relative">
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center p-4 bg-background overflow-hidden relative overflow-y-auto">
       {/* Background decorations */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full blur-[100px]" />
@@ -58,13 +68,13 @@ export default function Home() {
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", bounce: 0.5 }}
-        className="text-center z-10 w-full max-w-md"
+        className="text-center z-10 w-full max-w-md py-8"
       >
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4">
           <img 
             src="/mindtrap-logo.png" 
             alt="MindTrap" 
-            className="w-64 h-64 md:w-72 md:h-72 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+            className="w-56 h-56 md:w-64 md:h-64 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
           />
         </div>
 
@@ -75,6 +85,7 @@ export default function Home() {
               <Input 
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreateRoom()}
                 placeholder="مثال: عبود، فويصل..."
                 className="h-14 text-lg bg-background/50 border-primary/30 focus-visible:ring-primary rounded-xl"
                 maxLength={15}
@@ -103,6 +114,7 @@ export default function Home() {
               <Input 
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleJoinRoom()}
                 placeholder="كود الغرفة"
                 className="h-14 text-center text-xl font-mono tracking-widest bg-background/50 border-border rounded-xl"
                 maxLength={6}
@@ -116,8 +128,61 @@ export default function Home() {
                 ادخل
               </Button>
             </div>
+
+            {/* Tutorial toggle */}
+            <button
+              onClick={() => setShowTutorial(v => !v)}
+              className="text-sm text-primary/80 hover:text-primary font-bold flex items-center justify-center gap-2 transition-colors"
+            >
+              {showTutorial ? "▲ إخفاء شرح اللعبة" : "▼ كيف تلعب MindTrap؟"}
+            </button>
           </CardContent>
         </Card>
+
+        {/* Tutorial Panel */}
+        <AnimatePresence>
+          {showTutorial && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <Card className="mt-4 border-primary/20 bg-card/40 backdrop-blur-xl text-right">
+                <CardContent className="p-6 flex flex-col gap-5">
+                  <div className="text-center mb-2">
+                    <h2 className="text-2xl font-black text-primary">دليل اللعبة 🧠</h2>
+                    <p className="text-sm text-muted-foreground mt-1">مو الذكاء… الهدف إنك ما تنخدع</p>
+                  </div>
+
+                  {HOW_TO_STEPS.map((step, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.07 }}
+                      className="flex items-start gap-4 p-4 bg-background/40 rounded-xl border border-border"
+                    >
+                      <div className="text-3xl shrink-0">{step.icon}</div>
+                      <div className="flex-1">
+                        <div className="font-black text-foreground text-base">{step.title}</div>
+                        <div className="text-sm text-muted-foreground mt-1">{step.desc}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                  <div className="mt-2 p-4 bg-primary/10 border border-primary/30 rounded-xl text-center">
+                    <p className="text-sm font-bold text-primary">⚡ نصيحة</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      الأسئلة مصممة تخدعك — فكر مرتين قبل ما تجاوب!
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
