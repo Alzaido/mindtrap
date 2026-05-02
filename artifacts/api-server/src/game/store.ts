@@ -45,6 +45,7 @@ export interface Room {
   questions: Question[];
   usedQuestionIds: Set<string>;
   questionTimer?: ReturnType<typeof setTimeout>;
+  resultSentForQuestion: Set<string>;
   createdAt: number;
 }
 
@@ -80,6 +81,7 @@ export function createRoom(
     currentQuestion: 0,
     questions: [],
     usedQuestionIds: new Set(),
+    resultSentForQuestion: new Set(),
     createdAt: Date.now(),
   };
 
@@ -117,14 +119,16 @@ export function addPlayer(
 ): Player | null {
   const room = rooms.get(roomCode.toUpperCase());
   if (!room) return null;
-  if (room.status !== "waiting") return null;
-  if (room.players.size >= room.maxPlayers) return null;
+
+  // Allow reconnection for existing players at any game status
   if (room.players.has(playerName)) {
-    // Reconnection — update socketId
     const existing = room.players.get(playerName)!;
     existing.socketId = socketId;
     return existing;
   }
+
+  if (room.status !== "waiting") return null;
+  if (room.players.size >= room.maxPlayers) return null;
 
   const player: Player = {
     name: playerName,
@@ -149,6 +153,7 @@ export function resetRoom(roomCode: string): Room | null {
   room.currentQuestion = 0;
   room.questions = [];
   room.usedQuestionIds = new Set();
+  room.resultSentForQuestion = new Set();
   if (room.questionTimer) {
     clearTimeout(room.questionTimer);
     room.questionTimer = undefined;

@@ -41,11 +41,15 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
         socket.emit("error", { message: "الغرفة غير موجودة" });
         return;
       }
-      if (room.status !== "waiting") {
+
+      const existingPlayer = room.players.get(playerName);
+
+      // Allow reconnection mid-game if player already exists in the room
+      if (room.status !== "waiting" && !existingPlayer) {
         socket.emit("error", { message: "اللعبة بدأت بالفعل" });
         return;
       }
-      if (room.players.size >= room.maxPlayers && !room.players.has(playerName)) {
+      if (room.players.size >= room.maxPlayers && !existingPlayer) {
         socket.emit("error", { message: "الغرفة ممتلئة" });
         return;
       }
@@ -59,9 +63,8 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       socketRoomMap.set(socket.id, { roomCode: code, playerName });
       socket.join(code);
 
-      // Notify all players in room
       io.to(code).emit("room-updated", roomToJSON(room));
-      logger.info({ roomCode: code, playerName }, "Player joined room");
+      logger.info({ roomCode: code, playerName, reconnect: !!existingPlayer }, "Player joined room");
     });
 
     socket.on("start-game", ({ roomCode }: { roomCode: string }) => {
@@ -132,21 +135,20 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
           correct: answerIndex === currentQ.correctIndex,
         });
 
-        // Check if all players answered
-        const player = room.players.get(playerName);
-        if (player) {
-          const allAnswered = Array.from(room.players.values()).every((p) =>
-            p.answers.some((a) => a.questionId === questionId)
-          );
+        // Check if all active (non-frozen) players answered
+        const now = Date.now();
+        const allAnswered = Array.from(room.players.values()).every((p) => {
+          const answered = p.answers.some((a) => a.questionId === questionId);
+          const frozen = p.frozenUntil !== undefined && p.frozenUntil > now;
+          return answered || frozen;
+        });
 
-          if (allAnswered) {
-            // Clear the timeout and send results immediately
-            if (room.questionTimer) {
-              clearTimeout(room.questionTimer);
-              room.questionTimer = undefined;
-            }
-            sendQuestionResult(io, code, questionId);
+        if (allAnswered) {
+          if (room.questionTimer) {
+            clearTimeout(room.questionTimer);
+            room.questionTimer = undefined;
           }
+          sendQuestionResult(io, code, questionId);
         }
       }
     );
@@ -322,6 +324,10 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
 function sendQuestionResult(io: SocketIOServer, roomCode: string, questionId: string) {
   const room = getRoom(roomCode);
   if (!room) return;
+
+  // Guard: prevent double-sending results for the same question
+  if (room.resultSentForQuestion.has(questionId)) return;
+  room.resultSentForQuestion.add(questionId);
 
   const question = room.questions.find((q) => q.id === questionId);
   if (!question) return;
