@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MindTrap Game API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: rooms
+    description: Game room management
+  - name: questions
+    description: Question bank
+  - name: leaderboard
+    description: Scores and leaderboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,133 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /rooms:
+    post:
+      operationId: createRoom
+      tags: [rooms]
+      summary: Create a new game room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomBody"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /rooms/{code}:
+    get:
+      operationId: getRoom
+      tags: [rooms]
+      summary: Get room by code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Room found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /questions:
+    get:
+      operationId: getQuestions
+      tags: [questions]
+      summary: Get questions for the game
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [tricky, psychological, visual, reverse, all]
+            default: all
+      responses:
+        "200":
+          description: Questions list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionsResponse"
+
+  /leaderboard/{roomCode}:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get final leaderboard for a room
+      parameters:
+        - name: roomCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats/{roomCode}/{playerName}:
+    get:
+      operationId: getPlayerStats
+      tags: [leaderboard]
+      summary: Get player analytics after game
+      parameters:
+        - name: roomCode
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: playerName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerStats"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +163,183 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    CreateRoomBody:
+      type: object
+      properties:
+        hostName:
+          type: string
+        maxPlayers:
+          type: integer
+          minimum: 2
+          maximum: 10
+          default: 6
+        questionCount:
+          type: integer
+          minimum: 5
+          maximum: 30
+          default: 10
+      required: [hostName]
+
+    Player:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: integer
+        isHost:
+          type: boolean
+        abilities:
+          $ref: "#/components/schemas/PlayerAbilities"
+      required: [name, score, isHost, abilities]
+
+    PlayerAbilities:
+      type: object
+      properties:
+        confuse:
+          type: integer
+          description: Remaining uses of confuse ability
+        freeze:
+          type: integer
+          description: Remaining uses of freeze ability
+        reverse:
+          type: integer
+          description: Remaining uses of reverse ability
+      required: [confuse, freeze, reverse]
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        hostName:
+          type: string
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        status:
+          type: string
+          enum: [waiting, playing, finished]
+        maxPlayers:
+          type: integer
+        questionCount:
+          type: integer
+        currentQuestion:
+          type: integer
+      required: [id, code, hostName, players, status, maxPlayers, questionCount, currentQuestion]
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        category:
+          type: string
+          enum: [tricky, psychological, visual, reverse]
+        timeLimit:
+          type: integer
+          description: Seconds to answer (5-8)
+        explanation:
+          type: string
+      required: [id, text, options, correctIndex, category, timeLimit, explanation]
+
+    QuestionsResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        total:
+          type: integer
+      required: [questions, total]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        name:
+          type: string
+        score:
+          type: integer
+        correctAnswers:
+          type: integer
+        totalAnswers:
+          type: integer
+        avgResponseTime:
+          type: number
+      required: [rank, name, score, correctAnswers, totalAnswers, avgResponseTime]
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        roomCode:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+      required: [roomCode, entries]
+
+    PlayerStats:
+      type: object
+      properties:
+        playerName:
+          type: string
+        profileType:
+          type: string
+          enum: [fast_reckless, slow_precise, hard_to_trick, easy_to_trick]
+        profileLabel:
+          type: string
+        profileEmoji:
+          type: string
+        score:
+          type: integer
+        rank:
+          type: integer
+        totalPlayers:
+          type: integer
+        correctAnswers:
+          type: integer
+        wrongAnswers:
+          type: integer
+        avgResponseTime:
+          type: number
+        bonusPoints:
+          type: integer
+        abilitiesUsed:
+          type: integer
+      required:
+        - playerName
+        - profileType
+        - profileLabel
+        - profileEmoji
+        - score
+        - rank
+        - totalPlayers
+        - correctAnswers
+        - wrongAnswers
+        - avgResponseTime
+        - bonusPoints
+        - abilitiesUsed

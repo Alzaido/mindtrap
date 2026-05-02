@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MindTrap - لعبة الأسئلة الخادعة"
+version = "1.0.0"
+id = "artifacts/mindtrap"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23963
+
+[services.development]
+run = "pnpm --filter @workspace/mindtrap run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mindtrap", "run", "build" ]
+publicDir = "artifacts/mindtrap/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23963"
+BASE_PATH = "/"
