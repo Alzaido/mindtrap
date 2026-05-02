@@ -10,6 +10,7 @@ export interface PlayerAbilities {
   confuse: number;
   freeze: number;
   reverse: number;
+  sabotage: number;
 }
 
 export interface PlayerAnswer {
@@ -86,7 +87,7 @@ export function createRoom(
     name: hostName,
     score: 0,
     isHost: true,
-    abilities: { confuse: 1, freeze: 1, reverse: 1 },
+    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 },
     socketId: "",
     answers: [],
     abilitiesUsed: 0,
@@ -129,7 +130,7 @@ export function addPlayer(
     name: playerName,
     score: 0,
     isHost: false,
-    abilities: { confuse: 1, freeze: 1, reverse: 1 },
+    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 },
     socketId,
     answers: [],
     abilitiesUsed: 0,

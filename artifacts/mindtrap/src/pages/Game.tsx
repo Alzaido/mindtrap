@@ -39,8 +39,10 @@ export default function Game() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  const [abilities, setAbilities] = useState({ confuse: 1, freeze: 1, reverse: 1 });
+  const [abilities, setAbilities] = useState({ confuse: 1, freeze: 1, reverse: 1, sabotage: 1 });
   const [activeEffect, setActiveEffect] = useState<{ type: string, message: string } | null>(null);
+  const [otherPlayers, setOtherPlayers] = useState<string[]>([]);
+  const [showTargetPicker, setShowTargetPicker] = useState(false);
 
   useEffect(() => {
     if (!socket || !isConnected || !roomCode) {
@@ -50,8 +52,11 @@ export default function Game() {
       return;
     }
 
-    socket.on("next-question", (data: { question: Question, questionNumber: number, totalQuestions: number }) => {
+    socket.on("next-question", (data: { question: Question, questionNumber: number, totalQuestions: number, playerNames?: string[] }) => {
       setupNewQuestion(data);
+      if (data.playerNames) {
+        setOtherPlayers(data.playerNames.filter((n) => n !== playerName));
+      }
     });
 
     socket.on("question-result", (data: { correctIndex: number, explanation: string, scores: ScoreUpdate[] }) => {
@@ -74,6 +79,18 @@ export default function Game() {
       setTimeout(() => setActiveEffect(null), 3000);
     });
 
+    socket.on("sabotage-effect", (data: { fromPlayer: string; stolen: number }) => {
+      setActiveEffect({
+        type: "sabotage",
+        message: `💣 ${data.fromPlayer} خرّبك وسرق ${data.stolen} نقطة!`,
+      });
+      setTimeout(() => setActiveEffect(null), 4000);
+    });
+
+    socket.on("score-update", (data: { scores: ScoreUpdate[] }) => {
+      setScores(data.scores);
+    });
+
     socket.on("game-finished", () => {
       setLocation(`/results/${roomCode}`);
     });
@@ -82,6 +99,8 @@ export default function Game() {
       socket.off("next-question");
       socket.off("question-result");
       socket.off("ability-effect");
+      socket.off("sabotage-effect");
+      socket.off("score-update");
       socket.off("game-finished");
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -131,18 +150,17 @@ export default function Game() {
 
   const useAbility = (ability: 'confuse' | 'freeze' | 'reverse') => {
     if (abilities[ability] <= 0 || !socket || !roomCode || !playerName) return;
-    
     setAbilities(prev => ({ ...prev, [ability]: prev[ability] - 1 }));
-    
-    // In a real app we'd pick a target, here we just emit and server picks randomly or handles it
-    socket.emit("use-ability", {
-      roomCode,
-      playerName,
-      ability,
-      targetName: "random" 
-    });
-    
+    socket.emit("use-ability", { roomCode, playerName, ability, targetName: "random" });
     toast({ title: `استخدمت قدرة ${ability === 'confuse' ? 'التشويش 😵' : ability === 'freeze' ? 'التجميد ❄️' : 'الانعكاس 🔄'}` });
+  };
+
+  const useSabotage = (targetName: string) => {
+    if (abilities.sabotage <= 0 || !socket || !roomCode || !playerName) return;
+    setAbilities(prev => ({ ...prev, sabotage: 0 }));
+    setShowTargetPicker(false);
+    socket.emit("use-ability", { roomCode, playerName, ability: "sabotage", targetName });
+    toast({ title: `💣 تخريب ${targetName}! سرقت نقاطه` });
   };
 
   if (!question) {
@@ -274,15 +292,79 @@ export default function Game() {
         </AnimatePresence>
       </div>
 
+      {/* Target Picker Overlay */}
+      <AnimatePresence>
+        {showTargetPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm pb-8"
+            onClick={() => setShowTargetPicker(false)}
+          >
+            <motion.div
+              initial={{ y: 200, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 200, opacity: 0 }}
+              transition={{ type: "spring", damping: 20 }}
+              className="bg-card border border-destructive/50 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-[0_0_40px_rgba(239,68,68,0.3)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-black text-destructive text-center mb-2">💣 اختار ضحيتك</h3>
+              <p className="text-sm text-muted-foreground text-center mb-5">
+                ستسرق <span className="text-destructive font-bold">50 نقطة</span> من اللاعب المختار
+              </p>
+              <div className="flex flex-col gap-3">
+                {otherPlayers.length === 0 ? (
+                  <p className="text-center text-muted-foreground text-sm">ما في لاعبين ثانيين</p>
+                ) : (
+                  otherPlayers.map((name) => {
+                    const playerScore = scores.find((s) => s.name === name);
+                    return (
+                      <motion.button
+                        key={name}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => useSabotage(name)}
+                        className="flex items-center justify-between bg-background/60 border border-border hover:border-destructive rounded-xl px-5 py-4 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center text-lg font-bold text-destructive">
+                            {name.charAt(0)}
+                          </div>
+                          <span className="font-bold text-lg">{name}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground">نقاطه</div>
+                          <div className="font-black text-foreground">{playerScore?.score ?? "—"}</div>
+                        </div>
+                      </motion.button>
+                    );
+                  })
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full mt-4 text-muted-foreground"
+                onClick={() => setShowTargetPicker(false)}
+              >
+                إلغاء
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="mt-8 pt-4 border-t border-border z-10">
         <div className="flex justify-between items-end gap-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button 
               variant="outline" 
               size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative group"
+              className="w-14 h-14 rounded-full bg-card relative"
               onClick={() => useAbility('confuse')}
               disabled={abilities.confuse <= 0}
+              title="تشويش"
             >
               <span className="text-2xl">😵</span>
               <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
@@ -292,9 +374,10 @@ export default function Game() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative group"
+              className="w-14 h-14 rounded-full bg-card relative"
               onClick={() => useAbility('freeze')}
               disabled={abilities.freeze <= 0}
+              title="تجميد"
             >
               <span className="text-2xl">❄️</span>
               <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
@@ -304,13 +387,34 @@ export default function Game() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative group"
+              className="w-14 h-14 rounded-full bg-card relative"
               onClick={() => useAbility('reverse')}
               disabled={abilities.reverse <= 0}
+              title="انعكاس"
             >
               <span className="text-2xl">🔄</span>
               <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
                 {abilities.reverse}
+              </span>
+            </Button>
+            {/* Sabotage — targeted ability */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={`w-14 h-14 rounded-full relative transition-all ${
+                abilities.sabotage > 0
+                  ? "bg-destructive/10 border-destructive/50 hover:bg-destructive/20 hover:border-destructive shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+                  : "bg-card opacity-40"
+              }`}
+              onClick={() => abilities.sabotage > 0 && setShowTargetPicker(true)}
+              disabled={abilities.sabotage <= 0}
+              title="تخريب"
+            >
+              <span className="text-2xl">💣</span>
+              <span className={`absolute -top-2 -right-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
+                abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
+              }`}>
+                {abilities.sabotage}
               </span>
             </Button>
           </div>

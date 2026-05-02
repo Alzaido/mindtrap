@@ -157,7 +157,7 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       }: {
         roomCode: string;
         playerName: string;
-        ability: "confuse" | "freeze" | "reverse";
+        ability: "confuse" | "freeze" | "reverse" | "sabotage";
         targetName: string;
       }) => {
         const code = roomCode.toUpperCase();
@@ -183,13 +183,40 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
         player.abilities[ability]--;
         player.abilitiesUsed++;
 
-        // Notify target
+        // Sabotage: steal 50 points from target (minimum 0)
+        if (ability === "sabotage") {
+          const stolen = Math.min(target.score, 50);
+          target.score = Math.max(0, target.score - stolen);
+          player.score += stolen;
+
+          // Notify target they were sabotaged
+          const targetSocket = io.sockets.sockets.get(target.socketId);
+          if (targetSocket) {
+            targetSocket.emit("sabotage-effect", {
+              fromPlayer: playerName,
+              stolen,
+            });
+          }
+
+          // Broadcast updated scores to all
+          const updatedScores = Array.from(room.players.values()).map((p) => ({
+            name: p.name,
+            score: p.score,
+            delta: 0,
+          }));
+          io.to(code).emit("score-update", { scores: updatedScores });
+
+          logger.info({ playerName, targetName: resolvedTargetName, stolen, roomCode: code }, "Sabotage used");
+          return;
+        }
+
+        // Notify target for other abilities
         const targetSocket = io.sockets.sockets.get(target.socketId);
         if (targetSocket) {
           targetSocket.emit("ability-effect", {
             ability,
             fromPlayer: playerName,
-            toPlayer: targetName,
+            toPlayer: resolvedTargetName,
           });
         }
 
@@ -197,10 +224,10 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
         io.to(code).emit("ability-used", {
           ability,
           fromPlayer: playerName,
-          toPlayer: targetName,
+          toPlayer: resolvedTargetName,
         });
 
-        logger.info({ playerName, ability, targetName, roomCode: code }, "Ability used");
+        logger.info({ playerName, ability, targetName: resolvedTargetName, roomCode: code }, "Ability used");
       }
     );
 
@@ -238,7 +265,7 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
   const question = room.questions[questionIndex];
   room.usedQuestionIds.add(question.id);
 
-  // Send question without correct answer
+  // Send question without correct answer, include player list for target selection
   io.to(roomCode).emit("next-question", {
     question: {
       id: question.id,
@@ -249,6 +276,7 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
     },
     questionNumber: questionIndex + 1,
     totalQuestions: room.questions.length,
+    playerNames: Array.from(room.players.keys()),
   });
 
   logger.info({ roomCode, questionIndex, questionId: question.id }, "Question sent");
