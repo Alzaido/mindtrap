@@ -14,7 +14,7 @@ import {
   rooms,
 } from "./store";
 
-const QUESTION_TIMEOUT_MS = 10000; // 10 seconds max per question
+const QUESTION_TIMEOUT_MS = 12000; // 10s question + 2s buffer
 
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
@@ -281,7 +281,7 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
       text: question.text,
       options: question.options,
       category: question.category,
-      timeLimit: question.timeLimit,
+      timeLimit: 10,
     },
     questionNumber: questionIndex + 1,
     totalQuestions: room.questions.length,
@@ -290,8 +290,8 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
 
   logger.info({ roomCode, questionIndex, questionId: question.id }, "Question sent");
 
-  // Auto-advance after time limit + 2s buffer
-  const timeoutMs = (question.timeLimit + 2) * 1000;
+  // Auto-advance after 10s + 2s buffer
+  const timeoutMs = QUESTION_TIMEOUT_MS;
   room.questionTimer = setTimeout(() => {
     sendQuestionResult(io, roomCode, question.id);
   }, timeoutMs);
@@ -319,13 +319,13 @@ function sendQuestionResult(io: SocketIOServer, roomCode: string, questionId: st
     scores,
   });
 
-  // Advance to next question after 10 seconds
+  // Advance to next question after 6 seconds
   setTimeout(() => {
     const r = getRoom(roomCode);
     if (!r || r.status !== "playing") return;
     r.currentQuestion++;
     sendNextQuestion(io, roomCode);
-  }, 10000);
+  }, 6000);
 }
 
 function endGame(io: SocketIOServer, roomCode: string) {
