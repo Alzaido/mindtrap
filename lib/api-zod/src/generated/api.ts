@@ -21,7 +21,7 @@ export const createRoomBodyMaxPlayersDefault = 6;
 export const createRoomBodyMaxPlayersMin = 2;
 export const createRoomBodyMaxPlayersMax = 10;
 
-export const createRoomBodyQuestionCountDefault = 10;
+export const createRoomBodyQuestionCountDefault = 20;
 export const createRoomBodyQuestionCountMin = 5;
 export const createRoomBodyQuestionCountMax = 30;
 
