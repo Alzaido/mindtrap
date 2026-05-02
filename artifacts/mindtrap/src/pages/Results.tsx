@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetLeaderboard } from "@workspace/api-client-react";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useSocket } from "@/contexts/SocketContext";
+import { playGameOver, playScoreReveal } from "@/lib/sounds";
 
 export default function Results() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -18,10 +19,19 @@ export default function Results() {
   const [readyPlayers, setReadyPlayers] = useState<string[]>([]);
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [iReady, setIReady] = useState(false);
+  const gameOverPlayedRef = useRef(false);
 
   const { data: leaderboard, isLoading } = useGetLeaderboard(roomCode || "", {
     query: { enabled: !!roomCode }
   });
+
+  useEffect(() => {
+    if (leaderboard && !gameOverPlayedRef.current) {
+      gameOverPlayedRef.current = true;
+      playGameOver();
+      setTimeout(() => playScoreReveal(), 900);
+    }
+  }, [leaderboard]);
 
   useEffect(() => {
     if (!socket || !roomCode) return;

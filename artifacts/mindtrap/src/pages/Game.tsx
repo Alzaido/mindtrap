@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { playTick, playCorrect, playWrong, playNewQuestion, playAbility, playCountdownEnd } from "@/lib/sounds";
 
 type Question = {
   id: string;
@@ -44,6 +45,9 @@ export default function Game() {
   const [otherPlayers, setOtherPlayers] = useState<string[]>([]);
   const [showTargetPicker, setShowTargetPicker] = useState(false);
 
+  const lastTickRef = useRef<number>(0);
+  const countdownEndPlayedRef = useRef(false);
+
   useEffect(() => {
     if (!socket || !isConnected || !roomCode) {
       if (!socket && !isConnected) {
@@ -53,6 +57,7 @@ export default function Game() {
     }
 
     socket.on("next-question", (data: { question: Question, questionNumber: number, totalQuestions: number, playerNames?: string[] }) => {
+      playNewQuestion();
       setupNewQuestion(data);
       if (data.playerNames) {
         setOtherPlayers(data.playerNames.filter((n) => n !== playerName));
@@ -63,10 +68,17 @@ export default function Game() {
       setCorrectIndex(data.correctIndex);
       setExplanation(data.explanation);
       setScores(data.scores);
-      // Compute yourDelta from the scores list
       const myScore = data.scores.find((s) => s.name === playerName);
-      setYourDelta(myScore ? myScore.delta : 0);
+      const delta = myScore ? myScore.delta : 0;
+      setYourDelta(delta);
       if (timerRef.current) clearInterval(timerRef.current);
+      // Play sound based on whether current player answered correctly
+      // delta > 0 means correct answer scored
+      if (delta > 0) {
+        playCorrect();
+      } else {
+        playWrong();
+      }
     });
 
     socket.on("ability-effect", (data: { ability: string, fromPlayer: string, toPlayer: string }) => {
@@ -75,11 +87,13 @@ export default function Game() {
       if (data.ability === "freeze") message = `❄️ ${data.fromPlayer} جمدك!`;
       if (data.ability === "reverse") message = `🔄 ${data.fromPlayer} عكسك!`;
       
+      playAbility(data.ability);
       setActiveEffect({ type: data.ability, message });
       setTimeout(() => setActiveEffect(null), 3000);
     });
 
     socket.on("sabotage-effect", (data: { fromPlayer: string; stolen: number }) => {
+      playAbility("sabotage");
       setActiveEffect({
         type: "sabotage",
         message: `💣 ${data.fromPlayer} خرّبك وسرق ${data.stolen} نقطة!`,
@@ -106,6 +120,19 @@ export default function Game() {
     };
   }, [socket, isConnected, roomCode, setLocation]);
 
+  useEffect(() => {
+    if (correctIndex !== null) return;
+    const ceiled = Math.ceil(timeLeft);
+    if (ceiled <= 3 && ceiled >= 1 && ceiled !== lastTickRef.current) {
+      lastTickRef.current = ceiled;
+      playTick(ceiled);
+    }
+    if (timeLeft <= 0 && !countdownEndPlayedRef.current) {
+      countdownEndPlayedRef.current = true;
+      playCountdownEnd();
+    }
+  }, [timeLeft, correctIndex]);
+
   const setupNewQuestion = (data: { question: Question, questionNumber: number, totalQuestions: number }) => {
     setQuestion(data.question);
     setQuestionNumber(data.questionNumber);
@@ -118,6 +145,8 @@ export default function Game() {
     setTimeLeft(data.question.timeLimit);
     setTimeLimit(data.question.timeLimit);
     startTimeRef.current = Date.now();
+    lastTickRef.current = 0;
+    countdownEndPlayedRef.current = false;
 
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
