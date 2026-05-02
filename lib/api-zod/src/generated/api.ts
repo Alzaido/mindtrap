@@ -17,7 +17,7 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Create a new game room
  */
-export const createRoomBodyMaxPlayersDefault = 6;
+export const createRoomBodyMaxPlayersDefault = 10;
 export const createRoomBodyMaxPlayersMin = 2;
 export const createRoomBodyMaxPlayersMax = 10;
 
