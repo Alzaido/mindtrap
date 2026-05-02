@@ -28,6 +28,9 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   // Map socketId -> { roomCode, playerName }
   const socketRoomMap = new Map<string, { roomCode: string; playerName: string }>();
 
+  // Map roomCode -> Set of playerNames who clicked "play again"
+  const replayReady = new Map<string, Set<string>>();
+
   io.on("connection", (socket: Socket) => {
     logger.info({ socketId: socket.id }, "Socket connected");
 
@@ -232,12 +235,31 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       }
     );
 
-    socket.on("reset-room", ({ roomCode }: { roomCode: string }) => {
+    socket.on("ready-again", ({ roomCode, playerName }: { roomCode: string; playerName: string }) => {
       const code = roomCode.toUpperCase();
-      const room = resetRoom(code);
-      if (!room) return;
-      io.to(code).emit("room-reset", roomToJSON(room));
-      logger.info({ roomCode: code }, "Room reset for replay");
+      const room = getRoom(code);
+      if (!room || room.status !== "finished") return;
+
+      if (!replayReady.has(code)) {
+        replayReady.set(code, new Set());
+      }
+      const readySet = replayReady.get(code)!;
+      readySet.add(playerName);
+
+      const totalPlayers = room.players.size;
+      const readyPlayers = Array.from(readySet);
+
+      io.to(code).emit("replay-ready-update", { readyPlayers, totalPlayers });
+      logger.info({ roomCode: code, readyPlayers, totalPlayers }, "Player ready for replay");
+
+      // All players ready → reset room and go back to lobby
+      if (readySet.size >= totalPlayers) {
+        replayReady.delete(code);
+        const resetted = resetRoom(code);
+        if (!resetted) return;
+        io.to(code).emit("room-reset", roomToJSON(resetted));
+        logger.info({ roomCode: code }, "All players ready — room reset for replay");
+      }
     });
 
     socket.on("disconnect", () => {
