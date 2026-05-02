@@ -31,6 +31,7 @@ export interface Player {
   answers: PlayerAnswer[];
   frozenUntil?: number;
   abilitiesUsed: number;
+  disconnected?: boolean;
 }
 
 export interface Room {
@@ -166,6 +167,7 @@ export function resetRoom(roomCode: string): Room | null {
     player.abilitiesUsed = 0;
     player.abilities = { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 };
     delete player.frozenUntil;
+    delete player.disconnected;
   }
 
   return room;

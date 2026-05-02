@@ -60,6 +60,9 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
         return;
       }
 
+      // Mark as reconnected (clear disconnected flag)
+      player.disconnected = false;
+
       socketRoomMap.set(socket.id, { roomCode: code, playerName });
       socket.join(code);
 
@@ -135,9 +138,10 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
           correct: answerIndex === currentQ.correctIndex,
         });
 
-        // Check if all active (non-frozen) players answered
+        // Check if all active (non-frozen, non-disconnected) players answered
         const now = Date.now();
         const allAnswered = Array.from(room.players.values()).every((p) => {
+          if (p.disconnected) return true;
           const answered = p.answers.some((a) => a.questionId === questionId);
           const frozen = p.frozenUntil !== undefined && p.frozenUntil > now;
           return answered || frozen;
@@ -264,17 +268,74 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       }
     });
 
+    socket.on("request-resync", ({ roomCode, playerName }: { roomCode: string; playerName: string }) => {
+      const code = roomCode.toUpperCase();
+      const room = getRoom(code);
+      if (!room) {
+        socket.emit("error", { message: "الغرفة غير موجودة" });
+        return;
+      }
+
+      if (room.status === "playing") {
+        const currentQ = room.questions[room.currentQuestion];
+        if (currentQ) {
+          socket.emit("next-question", {
+            question: {
+              id: currentQ.id,
+              text: currentQ.text,
+              options: currentQ.options,
+              category: currentQ.category,
+              timeLimit: 15,
+            },
+            questionNumber: room.currentQuestion + 1,
+            totalQuestions: room.questions.length,
+            playerNames: Array.from(room.players.keys()),
+          });
+        }
+      } else if (room.status === "finished") {
+        socket.emit("game-finished", {});
+      }
+
+      logger.info({ roomCode: code, playerName }, "Resync requested");
+    });
+
     socket.on("disconnect", () => {
       const info = socketRoomMap.get(socket.id);
       if (info) {
         const { roomCode, playerName } = info;
         socketRoomMap.delete(socket.id);
         const room = getRoom(roomCode);
-        if (room && room.status === "waiting") {
-          removePlayer(roomCode, playerName);
-          const updatedRoom = getRoom(roomCode);
-          if (updatedRoom) {
-            io.to(roomCode).emit("room-updated", roomToJSON(updatedRoom));
+        if (room) {
+          if (room.status === "waiting") {
+            removePlayer(roomCode, playerName);
+            const updatedRoom = getRoom(roomCode);
+            if (updatedRoom) {
+              io.to(roomCode).emit("room-updated", roomToJSON(updatedRoom));
+            }
+          } else if (room.status === "playing") {
+            // Mark player as disconnected but keep them in the game
+            const player = room.players.get(playerName);
+            if (player) {
+              player.disconnected = true;
+            }
+            // If remaining connected players all answered, advance immediately
+            const currentQ = room.questions[room.currentQuestion];
+            if (currentQ && !room.resultSentForQuestion.has(currentQ.id)) {
+              const now = Date.now();
+              const allAnswered = Array.from(room.players.values()).every((p) => {
+                if (p.disconnected) return true;
+                const answered = p.answers.some((a) => a.questionId === currentQ.id);
+                const frozen = p.frozenUntil !== undefined && p.frozenUntil > now;
+                return answered || frozen;
+              });
+              if (allAnswered) {
+                if (room.questionTimer) {
+                  clearTimeout(room.questionTimer);
+                  room.questionTimer = undefined;
+                }
+                sendQuestionResult(io, roomCode, currentQ.id);
+              }
+            }
           }
         }
         logger.info({ socketId: socket.id, playerName, roomCode }, "Socket disconnected");

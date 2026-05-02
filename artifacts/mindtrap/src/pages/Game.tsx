@@ -47,14 +47,58 @@ export default function Game() {
 
   const lastTickRef = useRef<number>(0);
   const countdownEndPlayedRef = useRef(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const reconnectDeadlineRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Handle socket connect / disconnect for reconnection
   useEffect(() => {
-    if (!socket || !isConnected || !roomCode) {
-      if (!socket && !isConnected) {
-        setLocation("/");
+    if (!socket) return;
+
+    const handleConnect = () => {
+      setIsReconnecting(false);
+      if (reconnectDeadlineRef.current) {
+        clearTimeout(reconnectDeadlineRef.current);
+        reconnectDeadlineRef.current = null;
       }
-      return;
+      // Rejoin room and request current state
+      if (roomCode && playerName) {
+        socket.emit("join-room", { roomCode, playerName });
+        setTimeout(() => {
+          socket.emit("request-resync", { roomCode, playerName });
+        }, 300);
+      }
+    };
+
+    const handleDisconnect = () => {
+      setIsReconnecting(true);
+      // Only redirect to home after 12 seconds of being unreachable
+      reconnectDeadlineRef.current = setTimeout(() => {
+        setLocation("/");
+      }, 12000);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+
+    // If already connected on mount, join the room
+    if (isConnected && roomCode && playerName) {
+      socket.emit("join-room", { roomCode, playerName });
+      setTimeout(() => {
+        socket.emit("request-resync", { roomCode, playerName });
+      }, 300);
     }
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      if (reconnectDeadlineRef.current) clearTimeout(reconnectDeadlineRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
+
+  // Register game events when socket is ready
+  useEffect(() => {
+    if (!socket || !isConnected || !roomCode) return;
 
     socket.on("next-question", (data: { question: Question, questionNumber: number, totalQuestions: number, playerNames?: string[] }) => {
       playNewQuestion();
@@ -72,8 +116,6 @@ export default function Game() {
       const delta = myScore ? myScore.delta : 0;
       setYourDelta(delta);
       if (timerRef.current) clearInterval(timerRef.current);
-      // Play sound based on whether current player answered correctly
-      // delta > 0 means correct answer scored
       if (delta > 0) {
         playCorrect();
       } else {
@@ -191,6 +233,16 @@ export default function Game() {
     socket.emit("use-ability", { roomCode, playerName, ability: "sabotage", targetName });
     toast({ title: `💣 تخريب ${targetName}! سرقت نقاطه` });
   };
+
+  if (isReconnecting) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
+        <div className="text-5xl animate-spin">🔄</div>
+        <div className="text-2xl font-black text-primary">جاري إعادة الاتصال...</div>
+        <div className="text-muted-foreground text-sm">سيتم إرجاعك للرئيسية إذا فشل الاتصال خلال 12 ثانية</div>
+      </div>
+    );
+  }
 
   if (!question) {
     return (
