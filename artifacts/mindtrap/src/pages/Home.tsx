@@ -60,12 +60,13 @@ export default function Home() {
         transition={{ type: "spring", bounce: 0.5 }}
         className="text-center z-10 w-full max-w-md"
       >
-        <h1 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary to-accent drop-shadow-sm mb-2">
-          MindTrap 🧠
-        </h1>
-        <p className="text-xl text-muted-foreground font-semibold mb-10">
-          مو الذكاء… الهدف إنك ما تنخدع
-        </p>
+        <div className="flex justify-center mb-6">
+          <img 
+            src="/mindtrap-logo.png" 
+            alt="MindTrap" 
+            className="w-64 h-64 md:w-72 md:h-72 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+          />
+        </div>
 
         <Card className="border-none bg-card/50 backdrop-blur-xl shadow-2xl relative">
           <CardContent className="p-6 md:p-8 flex flex-col gap-6">
