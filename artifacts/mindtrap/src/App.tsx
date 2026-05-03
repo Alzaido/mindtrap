@@ -10,6 +10,7 @@ import Lobby from "@/pages/Lobby";
 import Game from "@/pages/Game";
 import Results from "@/pages/Results";
 import Stats from "@/pages/Stats";
+import Admin from "@/pages/Admin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/game/:roomCode" component={Game} />
       <Route path="/results/:roomCode" component={Results} />
       <Route path="/stats/:roomCode/:playerName" component={Stats} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

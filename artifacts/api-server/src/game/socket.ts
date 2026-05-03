@@ -13,6 +13,13 @@ import {
   resetRoom,
   rooms,
 } from "./store";
+import {
+  trackGameStarted,
+  trackGameCompleted,
+  trackQuestionAnswered,
+  trackPlayerConnected,
+  trackPlayerDisconnected,
+} from "./stats";
 
 const QUESTION_TIMEOUT_MS = 17000; // 15s question + 2s buffer
 
@@ -32,6 +39,7 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   const replayReady = new Map<string, Set<string>>();
 
   io.on("connection", (socket: Socket) => {
+    trackPlayerConnected();
     logger.info({ socketId: socket.id }, "Socket connected");
 
     socket.on("join-room", ({ roomCode, playerName }: { roomCode: string; playerName: string }) => {
@@ -92,6 +100,7 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       room.currentQuestion = 0;
 
       logger.info({ roomCode: code, questions: room.questions.length }, "Game started");
+      trackGameStarted(code, Array.from(room.players.keys()));
       // Notify Lobby to navigate to game screen
       io.to(code).emit("game-started");
       // Small delay so clients can navigate before first question
@@ -338,6 +347,7 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
             }
           }
         }
+        trackPlayerDisconnected();
         logger.info({ socketId: socket.id, playerName, roomCode }, "Socket disconnected");
       }
     });
@@ -422,6 +432,7 @@ function endGame(io: SocketIOServer, roomCode: string) {
   if (!room) return;
 
   room.status = "finished";
+  trackGameCompleted(roomCode);
   const leaderboard = getLeaderboard(roomCode);
 
   io.to(roomCode).emit("game-finished", { leaderboard });

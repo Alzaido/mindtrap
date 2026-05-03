@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { CreateRoomBody } from "@workspace/api-zod";
 import { createRoom, getRoom, roomToJSON } from "../game/store";
 import { logger } from "../lib/logger";
+import { trackPlayerConnected } from "../game/stats";
 
 const router: IRouter = Router();
 
