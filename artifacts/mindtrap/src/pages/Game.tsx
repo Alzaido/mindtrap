@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { playTick, playCorrect, playWrong, playNewQuestion, playAbility, playCountdownEnd } from "@/lib/sounds";
+import { proxyImage } from "@/lib/api-config";
 
 type Question = {
   id: string;
@@ -317,10 +318,9 @@ export default function Game() {
             {question.image ? (
               <div className="w-full bg-black/60 flex items-center justify-center overflow-hidden rounded-t-xl" style={{ height: 200 }}>
                 <img
-                  src={question.image}
+                  src={proxyImage(question.image)}
                   alt="سؤال"
                   className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
                 />
               </div>
             ) : null}
@@ -387,11 +387,10 @@ export default function Game() {
                 style={{ maxHeight: 240 }}
               >
                 <img
-                  src={question.image}
+                  src={proxyImage(question.image)}
                   alt="صورة السؤال"
                   className="w-full object-contain"
                   style={{ maxHeight: 240 }}
-                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     const container = (e.target as HTMLImageElement).parentElement;
                     if (container) container.style.display = "none";

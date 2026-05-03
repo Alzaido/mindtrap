@@ -12,3 +12,10 @@ export function getApiUrl(): string {
   }
   return '';
 }
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+export function proxyImage(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  return `${BASE}/api/image-proxy?url=${encodeURIComponent(url)}`;
+}

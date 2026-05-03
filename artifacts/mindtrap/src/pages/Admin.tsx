@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
+import { proxyImage } from "@/lib/api-config";
 
 interface RoomInfo {
   code: string;
@@ -430,9 +431,8 @@ export default function Admin() {
                     >
                       {q.image && (
                         <img
-                          src={q.image}
+                          src={proxyImage(q.image)}
                           alt=""
-                          referrerPolicy="no-referrer"
                           className="w-16 h-16 object-contain rounded-lg bg-black/30 shrink-0"
                         />
                       )}
