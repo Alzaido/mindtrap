@@ -1,17 +1,23 @@
 import { Router, type IRouter } from "express";
 import { rooms } from "../game/store";
 import { getStats } from "../game/stats";
+import { getAllQuestionsWithStatus, disabledQuestionIds } from "../data/questions";
 
 const router: IRouter = Router();
 
 const ADMIN_SECRET = process.env["ADMIN_SECRET"] ?? "6655";
 
-router.get("/admin/stats", (req, res) => {
-  const key = req.query["key"];
+function checkAuth(req: any, res: any): boolean {
+  const key = req.query["key"] ?? req.headers["x-admin-key"];
   if (key !== ADMIN_SECRET) {
     res.status(401).json({ error: "غير مصرح" });
-    return;
+    return false;
   }
+  return true;
+}
+
+router.get("/admin/stats", (req, res) => {
+  if (!checkAuth(req, res)) return;
 
   const liveRooms = Array.from(rooms.values()).map((r) => ({
     code: r.code,
@@ -41,6 +47,26 @@ router.get("/admin/stats", (req, res) => {
     daily: getStats(),
     serverTime: new Date().toISOString(),
   });
+});
+
+router.get("/admin/questions", (req, res) => {
+  if (!checkAuth(req, res)) return;
+  const questions = getAllQuestionsWithStatus();
+  res.json({ questions, total: questions.length, disabled: disabledQuestionIds.size });
+});
+
+router.post("/admin/questions/:id/disable", (req, res) => {
+  if (!checkAuth(req, res)) return;
+  const { id } = req.params;
+  disabledQuestionIds.add(id);
+  res.json({ success: true, disabled: id });
+});
+
+router.post("/admin/questions/:id/enable", (req, res) => {
+  if (!checkAuth(req, res)) return;
+  const { id } = req.params;
+  disabledQuestionIds.delete(id);
+  res.json({ success: true, enabled: id });
 });
 
 export default router;

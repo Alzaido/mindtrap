@@ -9,6 +9,21 @@ export interface Question {
   image?: string;
 }
 
+export const disabledQuestionIds = new Set<string>();
+
+export function getAllQuestionsWithStatus() {
+  return ALL_QUESTIONS.map((q) => ({
+    id: q.id,
+    text: q.text,
+    options: q.options,
+    correctIndex: q.correctIndex,
+    category: q.category,
+    image: q.image,
+    explanation: q.explanation,
+    disabled: disabledQuestionIds.has(q.id),
+  }));
+}
+
 export const ALL_QUESTIONS: Question[] = [
   // ===== TRICKY / منطقية خادعة =====
   {
@@ -9412,7 +9427,7 @@ export function getQuestionsByCategory(
       ? ALL_QUESTIONS
       : ALL_QUESTIONS.filter((q) => q.category === category);
 
-  pool = pool.filter((q) => !excludeIds.has(q.id));
+  pool = pool.filter((q) => !excludeIds.has(q.id) && !disabledQuestionIds.has(q.id));
 
   // Guarantee at least 4 image questions per game
   const imagePool = pool.filter((q) => !!q.image);
