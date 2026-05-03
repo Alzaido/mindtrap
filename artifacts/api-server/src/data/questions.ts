@@ -5390,6 +5390,31 @@ export function getQuestionsByCategory(
 
   pool = pool.filter((q) => !excludeIds.has(q.id));
 
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, shuffled.length));
+  // Guarantee at least 4 image questions per game
+  const imagePool = pool.filter((q) => !!q.image);
+  const textPool = pool.filter((q) => !q.image);
+
+  const imageQuaranteed = Math.min(4, imagePool.length, count);
+  const textCount = Math.min(count - imageQuaranteed, textPool.length);
+
+  const shuffledImage = [...imagePool].sort(() => Math.random() - 0.5).slice(0, imageQuaranteed);
+  const shuffledText = [...textPool].sort(() => Math.random() - 0.5).slice(0, textCount);
+
+  // Interleave: every 4th question is an image question
+  const result: Question[] = [];
+  let imgIdx = 0;
+  let txtIdx = 0;
+  while (result.length < imageQuaranteed + textCount) {
+    if (imgIdx < shuffledImage.length && (result.length + 1) % 4 === 0) {
+      result.push(shuffledImage[imgIdx++]);
+    } else if (txtIdx < shuffledText.length) {
+      result.push(shuffledText[txtIdx++]);
+    } else if (imgIdx < shuffledImage.length) {
+      result.push(shuffledImage[imgIdx++]);
+    } else {
+      break;
+    }
+  }
+
+  return result;
 }

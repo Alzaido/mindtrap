@@ -302,8 +302,8 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
               text: currentQ.text,
               options: currentQ.options,
               category: currentQ.category,
-              timeLimit: currentQ.timeLimit,
-              image: currentQ.image,
+              timeLimit: 15,
+              image: currentQ.image ?? null,
             },
             questionNumber: room.currentQuestion + 1,
             totalQuestions: room.questions.length,
@@ -379,24 +379,26 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
   room.usedQuestionIds.add(question.id);
 
   // Send question without correct answer, include player list for target selection
+  const FIXED_TIME_LIMIT = 15;
+
   io.to(roomCode).emit("next-question", {
     question: {
       id: question.id,
       text: question.text,
       options: question.options,
       category: question.category,
-      timeLimit: question.timeLimit,
-      image: question.image,
+      timeLimit: FIXED_TIME_LIMIT,
+      image: question.image ?? null,
     },
     questionNumber: questionIndex + 1,
     totalQuestions: room.questions.length,
     playerNames: Array.from(room.players.keys()),
   });
 
-  logger.info({ roomCode, questionIndex, questionId: question.id }, "Question sent");
+  logger.info({ roomCode, questionIndex, questionId: question.id, hasImage: !!question.image }, "Question sent");
 
-  // Auto-advance after question's timeLimit + 2s buffer
-  const timeoutMs = (question.timeLimit ?? 15) * 1000 + RESULT_BUFFER_MS;
+  // Auto-advance after fixed 15s + 2s buffer
+  const timeoutMs = FIXED_TIME_LIMIT * 1000 + RESULT_BUFFER_MS;
   room.questionTimer = setTimeout(() => {
     sendQuestionResult(io, roomCode, question.id);
   }, timeoutMs);

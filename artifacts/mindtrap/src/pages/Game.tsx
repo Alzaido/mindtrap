@@ -304,30 +304,26 @@ export default function Game() {
         </div>
       </div>
 
-      {/* ── QUESTION ── */}
-      <div className="px-4 z-10 shrink-0">
-        <motion.div 
+      {/* ── QUESTION + IMAGE ── */}
+      <div className="px-3 z-10 shrink-0">
+        <motion.div
           key={question.id}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="bg-card/90 backdrop-blur-md border-border shadow-lg overflow-hidden">
-            {question.image && (
-              <div className="w-full bg-black/40 flex items-center justify-center overflow-hidden rounded-t-xl" style={{ minHeight: 140, maxHeight: 220 }}>
+            {question.image ? (
+              <div className="w-full bg-black/60 flex items-center justify-center overflow-hidden rounded-t-xl" style={{ height: 200 }}>
                 <img
                   src={question.image}
                   alt="سؤال"
                   className="w-full h-full object-contain"
-                  style={{ maxHeight: 220 }}
-                  onError={(e) => {
-                    const container = (e.target as HTMLImageElement).parentElement;
-                    if (container) container.style.display = "none";
-                  }}
+                  crossOrigin="anonymous"
                 />
               </div>
-            )}
-            <CardContent className={question.image ? "p-3 md:p-4" : "p-4 md:p-6"}>
-              <h2 className={`font-black leading-snug text-foreground text-center ${question.image ? "text-sm md:text-base" : "text-xl md:text-2xl"}`}>
+            ) : null}
+            <CardContent className={question.image ? "p-2 md:p-3" : "p-3 md:p-5"}>
+              <h2 className={`font-black leading-snug text-foreground text-center ${question.image ? "text-xs md:text-sm" : "text-lg md:text-xl"}`}>
                 {question.text}
               </h2>
             </CardContent>
@@ -336,8 +332,8 @@ export default function Game() {
       </div>
 
       {/* ── ANSWERS ── */}
-      <div className="flex-1 px-4 py-3 z-10 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-2 h-full max-w-3xl mx-auto">
+      <div className="shrink-0 px-3 py-2 z-10">
+        <div className="grid grid-cols-2 gap-1.5 max-w-3xl mx-auto">
           {question.options.map((opt, i) => {
             let btnClass = "bg-card hover:bg-card/80 border-border text-foreground";
             let anim = {};
@@ -357,11 +353,11 @@ export default function Game() {
             }
 
             return (
-              <motion.div key={i} animate={anim} transition={{ duration: 0.3 }} className="h-full">
+              <motion.div key={i} animate={anim} transition={{ duration: 0.3 }}>
                 <Button
                   onClick={() => handleAnswer(i)}
                   disabled={selectedAnswer !== null || timeLeft <= 0 || correctIndex !== null}
-                  className={`w-full h-full min-h-[52px] p-2 text-sm md:text-base font-bold whitespace-normal rounded-xl border-2 transition-all leading-snug ${btnClass}`}
+                  className={`w-full h-10 px-2 text-xs md:text-sm font-bold whitespace-normal rounded-lg border-2 transition-all leading-snug ${btnClass}`}
                 >
                   {opt}
                 </Button>
