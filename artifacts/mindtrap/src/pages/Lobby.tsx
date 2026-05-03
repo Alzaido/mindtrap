@@ -18,6 +18,7 @@ type RoomData = {
   code: string;
   roomName?: string;
   isPublic: boolean;
+  requiresPin?: boolean;
   hostName: string;
   players: { name: string; score: number; isHost: boolean; abilities: { confuse: number; freeze: number; reverse: number } }[];
   playerCount: number;
@@ -73,10 +74,19 @@ export default function Lobby() {
       setRoom(resetRoomData);
     });
 
+    socket.on("error", (data: { message: string }) => {
+      toast({ title: data.message, variant: "destructive" });
+      // If PIN was wrong or join rejected, go back to home
+      if (data.message.includes("الرقم السري") || data.message.includes("الغرفة")) {
+        setTimeout(() => setLocation("/"), 1200);
+      }
+    });
+
     return () => {
       socket.off("room-updated");
       socket.off("game-started");
       socket.off("room-reset");
+      socket.off("error");
     };
   }, [socket, isConnected, roomCode, playerName, setLocation]);
 

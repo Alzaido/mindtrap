@@ -41,7 +41,7 @@ export default function Game() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  const [abilities, setAbilities] = useState({ confuse: 1, freeze: 1, reverse: 1, sabotage: 1 });
+  const [abilities, setAbilities] = useState({ confuse: 1, freeze: 1, reverse: 1, sabotage: 0 });
   const [activeEffect, setActiveEffect] = useState<{ type: string, message: string } | null>(null);
   const [otherPlayers, setOtherPlayers] = useState<string[]>([]);
   const [showTargetPicker, setShowTargetPicker] = useState(false);

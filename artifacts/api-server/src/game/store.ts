@@ -192,6 +192,7 @@ export function roomToJSON(room: Room) {
     code: room.code,
     roomName: room.roomName,
     isPublic: room.isPublic,
+    requiresPin: !!room.pin,
     hostName: room.hostName,
     players: Array.from(room.players.values()).map((p) => ({
       name: p.name,

@@ -21,7 +21,7 @@ import {
   trackPlayerDisconnected,
 } from "./stats";
 
-const QUESTION_TIMEOUT_MS = 17000; // 15s question + 2s buffer
+const RESULT_BUFFER_MS = 2000; // 2s buffer after question timeLimit expires
 
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
@@ -394,8 +394,8 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
 
   logger.info({ roomCode, questionIndex, questionId: question.id }, "Question sent");
 
-  // Auto-advance after 10s + 2s buffer
-  const timeoutMs = QUESTION_TIMEOUT_MS;
+  // Auto-advance after question's timeLimit + 2s buffer
+  const timeoutMs = (question.timeLimit ?? 15) * 1000 + RESULT_BUFFER_MS;
   room.questionTimer = setTimeout(() => {
     sendQuestionResult(io, roomCode, question.id);
   }, timeoutMs);

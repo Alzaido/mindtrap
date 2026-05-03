@@ -74,7 +74,7 @@ export default function Home() {
     );
   };
 
-  const handleJoinRoom = (code?: string, isPrivate?: boolean) => {
+  const handleJoinRoom = async (code?: string, isPrivate?: boolean) => {
     const targetCode = (code ?? roomCode).trim().toUpperCase();
     if (!playerName.trim()) {
       toast({ title: "اكتب اسمك أول شي!", variant: "destructive" });
@@ -84,14 +84,39 @@ export default function Home() {
       toast({ title: "اكتب كود الغرفة!", variant: "destructive" });
       return;
     }
-    // If room is private and PIN not entered yet, show PIN prompt
+
+    // If we already know the room is private and PIN not entered, show PIN prompt
     if (isPrivate && !joinPin) {
       setRoomCode(targetCode);
       setNeedsPin(true);
       setActiveTab("join");
       return;
     }
-    setLocation(`/lobby/${targetCode}${joinPin ? `?pin=${joinPin}` : ""}`);
+
+    // If PIN already collected, navigate
+    if (joinPin) {
+      setLocation(`/lobby/${targetCode}?pin=${joinPin}`);
+      return;
+    }
+
+    // Unknown if private — fetch room to check before navigating
+    try {
+      const resp = await fetch(`/api/rooms/${targetCode}`);
+      if (!resp.ok) {
+        toast({ title: "الغرفة غير موجودة!", variant: "destructive" });
+        return;
+      }
+      const roomData = await resp.json();
+      if (roomData.requiresPin) {
+        setRoomCode(targetCode);
+        setNeedsPin(true);
+        setActiveTab("join");
+        return;
+      }
+      setLocation(`/lobby/${targetCode}`);
+    } catch {
+      toast({ title: "تعذر الاتصال، جرب مرة ثانية", variant: "destructive" });
+    }
   };
 
   const statusLabel = (s: string) =>
