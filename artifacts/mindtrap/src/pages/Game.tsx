@@ -337,7 +337,7 @@ export default function Game() {
 
       {/* ── ANSWERS ── */}
       <div className="flex-1 px-4 py-3 z-10 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-3 h-full max-w-3xl mx-auto">
+        <div className="grid grid-cols-2 gap-2 h-full max-w-3xl mx-auto">
           {question.options.map((opt, i) => {
             let btnClass = "bg-card hover:bg-card/80 border-border text-foreground";
             let anim = {};
@@ -361,7 +361,7 @@ export default function Game() {
                 <Button
                   onClick={() => handleAnswer(i)}
                   disabled={selectedAnswer !== null || timeLeft <= 0 || correctIndex !== null}
-                  className={`w-full h-full min-h-[70px] p-3 text-base md:text-lg font-bold whitespace-normal rounded-xl border-2 transition-all leading-snug ${btnClass}`}
+                  className={`w-full h-full min-h-[52px] p-2 text-sm md:text-base font-bold whitespace-normal rounded-xl border-2 transition-all leading-snug ${btnClass}`}
                 >
                   {opt}
                 </Button>
@@ -631,32 +631,22 @@ export default function Game() {
               </span>
             </button>
 
-            {/* Sabotage — requires correct answer to unlock */}
-            <div className="relative flex flex-col items-center">
-              <button
-                onClick={() => abilities.sabotage > 0 && setShowTargetPicker(true)}
-                disabled={abilities.sabotage <= 0}
-                title={abilities.sabotage > 0 ? "تخريب — اسرق 50 نقطة" : "أجب صح لتفعيل التخريب"}
-                className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
-                  ${abilities.sabotage > 0
-                    ? "bg-destructive/10 border-destructive/60 hover:bg-destructive/20 active:scale-95 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
-                    : "bg-card/30 border-border/30 cursor-not-allowed"}`}
-              >
-                {abilities.sabotage > 0 ? (
-                  <span className="text-xl">💣</span>
-                ) : (
-                  <span className="text-lg">🔒</span>
-                )}
-                {abilities.sabotage > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center bg-destructive text-white">
-                    {abilities.sabotage}
-                  </span>
-                )}
-              </button>
-              {abilities.sabotage <= 0 && (
-                <span className="text-[9px] text-muted-foreground/60 text-center leading-tight mt-0.5 w-12">أجب صح</span>
-              )}
-            </div>
+            {/* Sabotage */}
+            <button
+              onClick={() => abilities.sabotage > 0 && setShowTargetPicker(true)}
+              disabled={abilities.sabotage <= 0}
+              title={abilities.sabotage > 0 ? "تخريب — اسرق 50 نقطة" : "أجب صح لتفعيل التخريب"}
+              className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
+                ${abilities.sabotage > 0
+                  ? "bg-destructive/10 border-destructive/60 hover:bg-destructive/20 active:scale-95 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
+                  : "bg-card/40 border-border/40 opacity-40"}`}
+            >
+              <span className="text-xl">💣</span>
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
+                ${abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"}`}>
+                {abilities.sabotage}
+              </span>
+            </button>
           </div>
 
           {/* Live scores (top 3) */}
