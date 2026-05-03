@@ -376,7 +376,8 @@ function sendNextQuestion(io: SocketIOServer, roomCode: string) {
       text: question.text,
       options: question.options,
       category: question.category,
-      timeLimit: 15,
+      timeLimit: question.timeLimit,
+      image: question.image,
     },
     questionNumber: questionIndex + 1,
     totalQuestions: room.questions.length,
@@ -417,6 +418,27 @@ function sendQuestionResult(io: SocketIOServer, roomCode: string, questionId: st
     explanation: question.explanation,
     scores,
   });
+
+  // Update sabotage ability per player based on their answer
+  for (const player of room.players.values()) {
+    if (player.disconnected) continue;
+    const answer = player.answers.find((a) => a.questionId === questionId);
+    const answeredCorrectly = answer?.correct ?? false;
+
+    if (answeredCorrectly && player.abilities.sabotage === 0) {
+      // Correct answer → unlock sabotage
+      player.abilities.sabotage = 1;
+    } else if (!answeredCorrectly && player.abilities.sabotage > 0) {
+      // Wrong / no answer → forfeit sabotage
+      player.abilities.sabotage = 0;
+    }
+
+    // Notify this player of their updated abilities
+    const playerSocket = io.sockets.sockets.get(player.socketId);
+    if (playerSocket) {
+      playerSocket.emit("ability-update", { abilities: player.abilities });
+    }
+  }
 
   // Advance to next question after 6 seconds
   setTimeout(() => {

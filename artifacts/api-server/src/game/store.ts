@@ -85,7 +85,7 @@ export function createRoom(
     name: hostName,
     score: 0,
     isHost: true,
-    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 },
+    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 0 },
     socketId: "",
     answers: [],
     abilitiesUsed: 0,
@@ -130,7 +130,7 @@ export function addPlayer(
     name: playerName,
     score: 0,
     isHost: false,
-    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 },
+    abilities: { confuse: 1, freeze: 1, reverse: 1, sabotage: 0 },
     socketId,
     answers: [],
     abilitiesUsed: 0,
@@ -160,7 +160,7 @@ export function resetRoom(roomCode: string): Room | null {
     player.score = 0;
     player.answers = [];
     player.abilitiesUsed = 0;
-    player.abilities = { confuse: 1, freeze: 1, reverse: 1, sabotage: 1 };
+    player.abilities = { confuse: 1, freeze: 1, reverse: 1, sabotage: 0 };
     delete player.frozenUntil;
     delete player.disconnected;
   }
