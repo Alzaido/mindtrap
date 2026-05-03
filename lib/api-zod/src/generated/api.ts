@@ -15,8 +15,26 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List all public rooms
+ */
+export const ListPublicRoomsResponse = zod.object({
+  rooms: zod.array(
+    zod.object({
+      code: zod.string(),
+      roomName: zod.string().optional(),
+      hostName: zod.string(),
+      playerCount: zod.number(),
+      maxPlayers: zod.number(),
+      status: zod.enum(["waiting", "playing", "finished"]),
+      isPrivate: zod.boolean(),
+    }),
+  ),
+});
+
+/**
  * @summary Create a new game room
  */
+export const createRoomBodyIsPublicDefault = true;
 export const createRoomBodyMaxPlayersDefault = 10;
 export const createRoomBodyMaxPlayersMin = 2;
 export const createRoomBodyMaxPlayersMax = 10;
@@ -27,6 +45,18 @@ export const createRoomBodyQuestionCountMax = 30;
 
 export const CreateRoomBody = zod.object({
   hostName: zod.string(),
+  roomName: zod
+    .string()
+    .optional()
+    .describe("Optional display name for the room"),
+  isPublic: zod
+    .boolean()
+    .default(createRoomBodyIsPublicDefault)
+    .describe("Whether the room appears in the public browser"),
+  pin: zod
+    .string()
+    .optional()
+    .describe("4-digit PIN required to join private rooms"),
   maxPlayers: zod
     .number()
     .min(createRoomBodyMaxPlayersMin)
@@ -49,7 +79,9 @@ export const GetRoomParams = zod.object({
 export const GetRoomResponse = zod.object({
   id: zod.string(),
   code: zod.string(),
+  roomName: zod.string().optional(),
   hostName: zod.string(),
+  isPublic: zod.boolean(),
   players: zod.array(
     zod.object({
       name: zod.string(),
@@ -62,6 +94,7 @@ export const GetRoomResponse = zod.object({
       }),
     }),
   ),
+  playerCount: zod.number(),
   status: zod.enum(["waiting", "playing", "finished"]),
   maxPlayers: zod.number(),
   questionCount: zod.number(),

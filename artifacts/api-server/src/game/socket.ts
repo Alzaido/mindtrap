@@ -42,7 +42,7 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
     trackPlayerConnected();
     logger.info({ socketId: socket.id }, "Socket connected");
 
-    socket.on("join-room", ({ roomCode, playerName }: { roomCode: string; playerName: string }) => {
+    socket.on("join-room", ({ roomCode, playerName, pin }: { roomCode: string; playerName: string; pin?: string }) => {
       const code = roomCode.toUpperCase();
       const room = getRoom(code);
       if (!room) {
@@ -51,6 +51,14 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       }
 
       const existingPlayer = room.players.get(playerName);
+
+      // Validate PIN for private rooms (skip check for reconnecting players)
+      if (room.pin && !existingPlayer) {
+        if (!pin || pin !== room.pin) {
+          socket.emit("error", { message: "الرقم السري غلط!" });
+          return;
+        }
+      }
 
       // Allow reconnection mid-game if player already exists in the room
       if (room.status !== "waiting" && !existingPlayer) {

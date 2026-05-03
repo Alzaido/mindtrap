@@ -8,11 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
+function getPinFromSearch() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("pin") ?? undefined;
+}
+
 type RoomData = {
   id: string;
   code: string;
+  roomName?: string;
+  isPublic: boolean;
   hostName: string;
   players: { name: string; score: number; isHost: boolean; abilities: { confuse: number; freeze: number; reverse: number } }[];
+  playerCount: number;
   status: string;
   maxPlayers: number;
   questionCount: number;
@@ -51,7 +59,7 @@ export default function Lobby() {
   useEffect(() => {
     if (!socket || !isConnected || !roomCode || !playerName) return;
 
-    socket.emit("join-room", { roomCode, playerName });
+    socket.emit("join-room", { roomCode, playerName, pin: getPinFromSearch() });
 
     socket.on("room-updated", (updatedRoom: Room) => {
       setRoom(updatedRoom);
@@ -102,9 +110,15 @@ export default function Lobby() {
       
       <div className="max-w-2xl w-full mx-auto z-10 flex flex-col h-full gap-6 pt-8">
         
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-muted-foreground">كود الغرفة</h2>
-          <div 
+        <div className="text-center space-y-3">
+          {room.roomName && (
+            <h1 className="text-2xl font-black text-foreground truncate px-2">
+              {room.roomName}
+              {!room.isPublic && <span className="mr-2 text-yellow-400 text-lg">🔒</span>}
+            </h1>
+          )}
+          <h2 className="text-sm font-bold text-muted-foreground">{room.roomName ? "كود الغرفة" : "كود الغرفة"}</h2>
+          <div
             onClick={handleCopyCode}
             className="inline-flex items-center justify-center gap-4 bg-card border-2 border-border px-8 py-4 rounded-2xl cursor-pointer hover:border-primary transition-colors group"
           >

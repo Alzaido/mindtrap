@@ -23,6 +23,7 @@ import type {
   HealthStatus,
   LeaderboardResponse,
   PlayerStats,
+  PublicRoomsResponse,
   QuestionsResponse,
   Room,
 } from "./api.schemas";
@@ -103,6 +104,81 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all public rooms
+ */
+export const getListPublicRoomsUrl = () => {
+  return `/api/rooms`;
+};
+
+export const listPublicRooms = async (
+  options?: RequestInit,
+): Promise<PublicRoomsResponse> => {
+  return customFetch<PublicRoomsResponse>(getListPublicRoomsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPublicRoomsQueryKey = () => {
+  return [`/api/rooms`] as const;
+};
+
+export const getListPublicRoomsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPublicRooms>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPublicRooms>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListPublicRoomsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPublicRooms>>> = ({
+    signal,
+  }) => listPublicRooms({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPublicRooms>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPublicRoomsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPublicRooms>>
+>;
+export type ListPublicRoomsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all public rooms
+ */
+
+export function useListPublicRooms<
+  TData = Awaited<ReturnType<typeof listPublicRooms>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPublicRooms>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPublicRoomsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

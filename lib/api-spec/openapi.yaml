@@ -31,6 +31,17 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 
   /rooms:
+    get:
+      operationId: listPublicRooms
+      tags: [rooms]
+      summary: List all public rooms
+      responses:
+        "200":
+          description: Public rooms list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicRoomsResponse"
     post:
       operationId: createRoom
       tags: [rooms]
@@ -177,6 +188,16 @@ components:
       properties:
         hostName:
           type: string
+        roomName:
+          type: string
+          description: Optional display name for the room
+        isPublic:
+          type: boolean
+          default: true
+          description: Whether the room appears in the public browser
+        pin:
+          type: string
+          description: 4-digit PIN required to join private rooms
         maxPlayers:
           type: integer
           minimum: 2
@@ -223,12 +244,18 @@ components:
           type: string
         code:
           type: string
+        roomName:
+          type: string
         hostName:
           type: string
+        isPublic:
+          type: boolean
         players:
           type: array
           items:
             $ref: "#/components/schemas/Player"
+        playerCount:
+          type: integer
         status:
           type: string
           enum: [waiting, playing, finished]
@@ -238,7 +265,36 @@ components:
           type: integer
         currentQuestion:
           type: integer
-      required: [id, code, hostName, players, status, maxPlayers, questionCount, currentQuestion]
+      required: [id, code, hostName, isPublic, players, playerCount, status, maxPlayers, questionCount, currentQuestion]
+
+    PublicRoomEntry:
+      type: object
+      properties:
+        code:
+          type: string
+        roomName:
+          type: string
+        hostName:
+          type: string
+        playerCount:
+          type: integer
+        maxPlayers:
+          type: integer
+        status:
+          type: string
+          enum: [waiting, playing, finished]
+        isPrivate:
+          type: boolean
+      required: [code, hostName, playerCount, maxPlayers, status, isPrivate]
+
+    PublicRoomsResponse:
+      type: object
+      properties:
+        rooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicRoomEntry"
+      required: [rooms]
 
     Question:
       type: object

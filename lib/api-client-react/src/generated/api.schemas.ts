@@ -15,6 +15,12 @@ export interface ErrorResponse {
 
 export interface CreateRoomBody {
   hostName: string;
+  /** Optional display name for the room */
+  roomName?: string;
+  /** Whether the room appears in the public browser */
+  isPublic?: boolean;
+  /** 4-digit PIN required to join private rooms */
+  pin?: string;
   /**
    * @minimum 2
    * @maximum 10
@@ -54,12 +60,38 @@ export const RoomStatus = {
 export interface Room {
   id: string;
   code: string;
+  roomName?: string;
   hostName: string;
+  isPublic: boolean;
   players: Player[];
+  playerCount: number;
   status: RoomStatus;
   maxPlayers: number;
   questionCount: number;
   currentQuestion: number;
+}
+
+export type PublicRoomEntryStatus =
+  (typeof PublicRoomEntryStatus)[keyof typeof PublicRoomEntryStatus];
+
+export const PublicRoomEntryStatus = {
+  waiting: "waiting",
+  playing: "playing",
+  finished: "finished",
+} as const;
+
+export interface PublicRoomEntry {
+  code: string;
+  roomName?: string;
+  hostName: string;
+  playerCount: number;
+  maxPlayers: number;
+  status: PublicRoomEntryStatus;
+  isPrivate: boolean;
+}
+
+export interface PublicRoomsResponse {
+  rooms: PublicRoomEntry[];
 }
 
 export type QuestionCategory =

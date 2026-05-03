@@ -37,6 +37,9 @@ export interface Player {
 export interface Room {
   id: string;
   code: string;
+  roomName?: string;
+  isPublic: boolean;
+  pin?: string;
   hostName: string;
   players: Map<string, Player>;
   status: "waiting" | "playing" | "finished";
@@ -59,7 +62,10 @@ function generateCode(): string {
 export function createRoom(
   hostName: string,
   maxPlayers: number,
-  questionCount: number
+  questionCount: number,
+  roomName?: string,
+  isPublic: boolean = true,
+  pin?: string
 ): Room {
   let code = generateCode();
   while (rooms.has(code)) {
@@ -69,6 +75,9 @@ export function createRoom(
   const room: Room = {
     id: `room_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     code,
+    roomName,
+    isPublic,
+    pin,
     hostName,
     players: new Map(),
     status: "waiting",
@@ -181,6 +190,8 @@ export function roomToJSON(room: Room) {
   return {
     id: room.id,
     code: room.code,
+    roomName: room.roomName,
+    isPublic: room.isPublic,
     hostName: room.hostName,
     players: Array.from(room.players.values()).map((p) => ({
       name: p.name,
@@ -188,11 +199,27 @@ export function roomToJSON(room: Room) {
       isHost: p.isHost,
       abilities: p.abilities,
     })),
+    playerCount: room.players.size,
     status: room.status,
     maxPlayers: room.maxPlayers,
     questionCount: room.questionCount,
     currentQuestion: room.currentQuestion,
   };
+}
+
+export function getPublicRooms() {
+  return Array.from(rooms.values())
+    .filter((r) => r.isPublic && r.status !== "finished")
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((r) => ({
+      code: r.code,
+      roomName: r.roomName,
+      hostName: r.hostName,
+      playerCount: r.players.size,
+      maxPlayers: r.maxPlayers,
+      status: r.status,
+      isPrivate: !!r.pin,
+    }));
 }
 
 export function recordAnswer(
