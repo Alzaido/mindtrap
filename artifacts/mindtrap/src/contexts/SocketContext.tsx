@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getApiUrl } from '@/lib/api-config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -18,7 +19,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const apiUrl = getApiUrl();
     const newSocket = io(apiUrl, { path: '/api/socket.io' });
 
     newSocket.on('connect', () => {
