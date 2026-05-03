@@ -86,7 +86,7 @@ export default function Home() {
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateRoom()}
-                placeholder="مثال: عبود، فويصل..."
+                placeholder="عبود .. حمود"
                 className="h-14 text-lg bg-background/50 border-primary/30 focus-visible:ring-primary rounded-xl"
                 maxLength={15}
               />
