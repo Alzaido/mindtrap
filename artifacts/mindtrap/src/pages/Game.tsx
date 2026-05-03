@@ -320,7 +320,7 @@ export default function Game() {
                   src={question.image}
                   alt="سؤال"
                   className="w-full h-full object-contain"
-                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
                 />
               </div>
             ) : null}
@@ -391,6 +391,7 @@ export default function Game() {
                   alt="صورة السؤال"
                   className="w-full object-contain"
                   style={{ maxHeight: 240 }}
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     const container = (e.target as HTMLImageElement).parentElement;
                     if (container) container.style.display = "none";
