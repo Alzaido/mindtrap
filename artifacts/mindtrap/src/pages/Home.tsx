@@ -241,53 +241,91 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-4"
             >
-              <Input
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                placeholder="اسم الغرفة (اختياري)"
-                className="h-12 text-base bg-card/60 border-border rounded-xl"
-                maxLength={30}
-              />
-
-              {/* Public / Private toggle */}
-              <div className="flex rounded-xl border border-border overflow-hidden bg-card/20">
-                <button
-                  onClick={() => setIsPublic(true)}
-                  className={`flex-1 py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    isPublic ? "bg-primary/20 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  🌍 عامة
-                </button>
-                <button
-                  onClick={() => setIsPublic(false)}
-                  className={`flex-1 py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    !isPublic ? "bg-yellow-500/10 text-yellow-400 border-b-2 border-yellow-500" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  🔒 خاصة
-                </button>
+              {/* Room name */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs text-muted-foreground">{roomName.length}/30</span>
+                  <label className="text-sm font-bold text-foreground/90">اسم الغرفة</label>
+                </div>
+                <Input
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  placeholder="مثال: غرفة الشياطين 😈"
+                  className="h-13 text-base bg-card/60 border-primary/30 focus-visible:ring-primary rounded-xl text-right"
+                  maxLength={30}
+                  dir="rtl"
+                />
               </div>
 
+              {/* Preview */}
+              <AnimatePresence>
+                {roomName.trim() && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="flex items-center gap-3 p-3 bg-card/40 border border-primary/20 rounded-xl"
+                  >
+                    <div className="flex-1 min-w-0 text-right">
+                      <div className="font-bold text-sm flex items-center justify-end gap-1.5">
+                        {!isPublic && <span className="text-yellow-400 text-xs">🔒</span>}
+                        <span className="truncate">{roomName.trim()}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{playerName || "اسمك"} · تنطر</div>
+                    </div>
+                    <span className="text-2xl shrink-0">👁</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Public / Private toggle */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-bold text-foreground/90 text-right px-1">نوع الغرفة</label>
+                <div className="flex rounded-xl border border-border overflow-hidden bg-card/20">
+                  <button
+                    onClick={() => setIsPublic(true)}
+                    className={`flex-1 py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      isPublic ? "bg-primary/20 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    🌍 عامة
+                  </button>
+                  <button
+                    onClick={() => setIsPublic(false)}
+                    className={`flex-1 py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      !isPublic ? "bg-yellow-500/10 text-yellow-400 border-b-2 border-yellow-500" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    🔒 خاصة
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  {isPublic ? "تظهر في قائمة الغرف — يقدر أي أحد يدخل" : "مو مرئية — لا يدخلها أحد بدون رقم سري"}
+                </p>
+              </div>
+
+              {/* PIN for private */}
               <AnimatePresence>
                 {!isPublic && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-col gap-1.5"
+                  >
+                    <label className="text-sm font-bold text-yellow-400/90 text-right px-1">الرقم السري</label>
                     <Input
                       value={createPin}
                       onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      placeholder="الرقم السري — 4 أرقام"
-                      className="h-12 text-center text-xl font-mono tracking-widest bg-card/60 border-yellow-500/50 rounded-xl"
+                      placeholder="4 أرقام"
+                      className="h-12 text-center text-2xl font-mono tracking-[0.4em] bg-card/60 border-yellow-500/50 focus-visible:ring-yellow-500 rounded-xl"
                       maxLength={4}
                     />
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              <p className="text-xs text-muted-foreground text-center">
-                {isPublic ? "الغرفة ستظهر للجميع في قائمة الغرف العامة" : "الغرفة خاصة — لا تظهر في القائمة ولا يدخلها أحد بدون رقم سري"}
-              </p>
 
               <Button
                 size="lg"
