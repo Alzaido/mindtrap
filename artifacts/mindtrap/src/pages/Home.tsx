@@ -24,6 +24,7 @@ export default function Home() {
   const [playerName, setPlayerName] = useLocalStorage("mindtrap_playerName", "");
   const [activeTab, setActiveTab] = useState<Tab>("join");
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
 
   // Join form
   const [roomCode, setRoomCode] = useState("");
@@ -353,6 +354,80 @@ export default function Home() {
         >
           {showTutorial ? "▲ إخفاء شرح اللعبة" : "▼ كيف تلعب MindTrap؟"}
         </button>
+
+        {/* Install instructions toggle */}
+        <button
+          onClick={() => setShowInstall((v) => !v)}
+          className="text-sm text-muted-foreground/70 hover:text-muted-foreground font-bold flex items-center justify-center gap-2 transition-colors py-1"
+        >
+          {showInstall ? "▲ إخفاء طريقة التثبيت" : "📲 ثبّت اللعبة على شاشتك الرئيسية"}
+        </button>
+
+        {/* Install Panel */}
+        <AnimatePresence>
+          {showInstall && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <Card className="border-border/40 bg-card/40 backdrop-blur-xl text-right">
+                <CardContent className="p-5 flex flex-col gap-4">
+                  <div className="text-center mb-1">
+                    <h2 className="text-lg font-black text-foreground">ثبّت MindTrap على هاتفك 📲</h2>
+                    <p className="text-xs text-muted-foreground mt-1">العب بدون إنترنت بطيء — كأنها تطبيق حقيقي</p>
+                  </div>
+
+                  {/* iPhone */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl"></span>
+                      <span className="font-black text-sm text-foreground">آيفون — Safari</span>
+                    </div>
+                    {[
+                      { n: "١", text: 'افتح الموقع من Safari (مو Chrome)' },
+                      { n: "٢", text: 'اضغط على زر المشاركة في الأسفل ⬜↑' },
+                      { n: "٣", text: '"أضف إلى الشاشة الرئيسية" ← اضغط' },
+                      { n: "٤", text: 'اضغط "إضافة" — خلاص! 🎉' },
+                    ].map((s) => (
+                      <div key={s.n} className="flex items-start gap-3 p-2.5 bg-background/30 rounded-xl border border-border/50">
+                        <span className="w-7 h-7 rounded-full bg-primary/15 text-primary text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{s.n}</span>
+                        <span className="text-sm text-foreground/90 leading-snug">{s.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-border/30" />
+
+                  {/* Android */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🤖</span>
+                      <span className="font-black text-sm text-foreground">أندرويد — Chrome</span>
+                    </div>
+                    {[
+                      { n: "١", text: 'افتح الموقع من Chrome' },
+                      { n: "٢", text: 'اضغط النقاط الثلاث ⋮ في الأعلى يمين' },
+                      { n: "٣", text: '"إضافة إلى الشاشة الرئيسية" ← اضغط' },
+                      { n: "٤", text: 'اضغط "إضافة" — خلاص! 🎉' },
+                    ].map((s) => (
+                      <div key={s.n} className="flex items-start gap-3 p-2.5 bg-background/30 rounded-xl border border-border/50">
+                        <span className="w-7 h-7 rounded-full bg-green-500/15 text-green-400 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{s.n}</span>
+                        <span className="text-sm text-foreground/90 leading-snug">{s.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-center">
+                    <p className="text-xs text-muted-foreground">بعد التثبيت تقدر تفتحها من الشاشة الرئيسية مثل أي تطبيق بدون ما تفتح المتصفح</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Tutorial Panel */}
         <AnimatePresence>
