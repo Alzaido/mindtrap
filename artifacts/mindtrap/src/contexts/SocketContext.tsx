@@ -18,7 +18,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const newSocket = io({ path: '/api/socket.io' });
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const newSocket = io(apiUrl, { path: '/api/socket.io' });
 
     newSocket.on('connect', () => {
       setIsConnected(true);
