@@ -4,7 +4,7 @@ import { getStats } from "../game/stats";
 
 const router: IRouter = Router();
 
-const ADMIN_SECRET = process.env["ADMIN_SECRET"] ?? "mindtrap2026";
+const ADMIN_SECRET = process.env["ADMIN_SECRET"] ?? "6655";
 
 router.get("/admin/stats", (req, res) => {
   const key = req.query["key"];

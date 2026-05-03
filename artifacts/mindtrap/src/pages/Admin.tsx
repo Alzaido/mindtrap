@@ -47,6 +47,10 @@ interface StatsResponse {
 const STORAGE_KEY = "mindtrap_admin_key";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function toWesternNumerals(str: string): string {
+  return str.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+}
+
 function statusLabel(s: string) {
   if (s === "waiting") return { text: "انتظار", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" };
   if (s === "playing") return { text: "تلعب", color: "text-green-400 bg-green-400/10 border-green-400/30" };
@@ -99,7 +103,7 @@ export default function Admin() {
   }, [key, fetchStats]);
 
   const handleLogin = () => {
-    const k = inputKey.trim();
+    const k = toWesternNumerals(inputKey.trim());
     if (!k) return;
     localStorage.setItem(STORAGE_KEY, k);
     setKey(k);
