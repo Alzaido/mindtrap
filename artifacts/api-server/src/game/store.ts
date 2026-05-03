@@ -53,12 +53,7 @@ export interface Room {
 const rooms = new Map<string, Room>();
 
 function generateCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 export function createRoom(

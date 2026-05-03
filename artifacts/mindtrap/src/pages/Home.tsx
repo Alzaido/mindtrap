@@ -115,9 +115,9 @@ export default function Home() {
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleJoinRoom()}
-                placeholder="كود الغرفة"
+                placeholder="مثال: 4821"
                 className="h-14 text-center text-xl font-mono tracking-widest bg-background/50 border-border rounded-xl"
-                maxLength={6}
+                maxLength={4}
               />
               <Button 
                 size="lg" 
