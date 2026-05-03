@@ -117,6 +117,14 @@ export default function Lobby() {
   return (
     <div className="min-h-[100dvh] w-full flex flex-col p-4 bg-background relative overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Exit button */}
+      <button
+        onClick={() => setLocation("/")}
+        className="absolute top-4 left-4 z-20 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors bg-card/60 border border-border px-3 py-2 rounded-xl backdrop-blur-sm"
+      >
+        ← خروج
+      </button>
       
       <div className="max-w-2xl w-full mx-auto z-10 flex flex-col h-full gap-6 pt-8">
         

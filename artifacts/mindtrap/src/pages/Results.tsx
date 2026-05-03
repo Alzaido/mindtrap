@@ -197,6 +197,15 @@ export default function Results() {
           <Button size="lg" variant="secondary" onClick={handleShare} className="h-14 px-8 rounded-xl font-bold">
             شارك الكود 📋
           </Button>
+
+          <Button
+            size="lg"
+            variant="ghost"
+            onClick={() => setLocation("/")}
+            className="h-12 rounded-xl font-bold text-muted-foreground hover:text-foreground border border-border/50"
+          >
+            🏠 الشاشة الرئيسية
+          </Button>
         </div>
 
         {/* Leaderboard List */}
