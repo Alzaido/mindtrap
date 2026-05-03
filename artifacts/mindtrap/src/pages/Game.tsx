@@ -14,6 +14,7 @@ type Question = {
   options: string[];
   category: string;
   timeLimit: number;
+  image?: string;
 };
 
 type ScoreUpdate = { name: string; score: number; delta: number };
@@ -305,9 +306,20 @@ export default function Game() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card className="bg-card/90 backdrop-blur-md border-border shadow-lg">
-            <CardContent className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-black leading-snug text-foreground text-center">
+          <Card className="bg-card/90 backdrop-blur-md border-border shadow-lg overflow-hidden">
+            {question.image && (
+              <div className="w-full bg-black/20 flex items-center justify-center overflow-hidden" style={{ maxHeight: 200 }}>
+                <img
+                  src={question.image}
+                  alt="سؤال"
+                  className="w-full object-cover"
+                  style={{ maxHeight: 200 }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </div>
+            )}
+            <CardContent className={question.image ? "p-3 md:p-4" : "p-4 md:p-6"}>
+              <h2 className={`font-black leading-snug text-foreground text-center ${question.image ? "text-base md:text-lg" : "text-xl md:text-2xl"}`}>
                 {question.text}
               </h2>
             </CardContent>
