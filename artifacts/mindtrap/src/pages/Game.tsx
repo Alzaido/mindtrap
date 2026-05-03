@@ -308,18 +308,21 @@ export default function Game() {
         >
           <Card className="bg-card/90 backdrop-blur-md border-border shadow-lg overflow-hidden">
             {question.image && (
-              <div className="w-full bg-black/20 flex items-center justify-center overflow-hidden" style={{ maxHeight: 200 }}>
+              <div className="w-full bg-black/40 flex items-center justify-center overflow-hidden rounded-t-xl" style={{ minHeight: 140, maxHeight: 220 }}>
                 <img
                   src={question.image}
                   alt="سؤال"
-                  className="w-full object-cover"
-                  style={{ maxHeight: 200 }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  className="w-full h-full object-contain"
+                  style={{ maxHeight: 220 }}
+                  onError={(e) => {
+                    const container = (e.target as HTMLImageElement).parentElement;
+                    if (container) container.style.display = "none";
+                  }}
                 />
               </div>
             )}
             <CardContent className={question.image ? "p-3 md:p-4" : "p-4 md:p-6"}>
-              <h2 className={`font-black leading-snug text-foreground text-center ${question.image ? "text-base md:text-lg" : "text-xl md:text-2xl"}`}>
+              <h2 className={`font-black leading-snug text-foreground text-center ${question.image ? "text-sm md:text-base" : "text-xl md:text-2xl"}`}>
                 {question.text}
               </h2>
             </CardContent>
@@ -361,24 +364,139 @@ export default function Game() {
             );
           })}
         </div>
-
-        {/* Explanation */}
-        <AnimatePresence>
-          {explanation && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-3 max-w-3xl mx-auto"
-            >
-              <Card className="bg-primary/10 border-primary/30">
-                <CardContent className="p-3 text-center">
-                  <p className="text-base font-bold text-primary">{explanation}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* ── RESULT OVERLAY — shown between questions ── */}
+      <AnimatePresence>
+        {correctIndex !== null && (
+          <motion.div
+            key="result-overlay"
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: "spring", damping: 28, stiffness: 220 }}
+            className="absolute inset-0 z-40 flex flex-col bg-background/97 backdrop-blur-lg overflow-y-auto"
+          >
+            {/* Image section */}
+            {question.image && (
+              <div
+                className="w-full shrink-0 bg-black/50 flex items-center justify-center overflow-hidden"
+                style={{ maxHeight: 240 }}
+              >
+                <img
+                  src={question.image}
+                  alt="صورة السؤال"
+                  className="w-full object-contain"
+                  style={{ maxHeight: 240 }}
+                  onError={(e) => {
+                    const container = (e.target as HTMLImageElement).parentElement;
+                    if (container) container.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="flex flex-col items-center px-5 py-4 gap-4 max-w-lg mx-auto w-full">
+
+              {/* Result badge */}
+              <motion.div
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", damping: 14 }}
+                className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl font-black text-lg border-2 ${
+                  yourDelta !== null && yourDelta > 0
+                    ? "bg-green-500/15 border-green-500/60 text-green-500"
+                    : "bg-destructive/15 border-destructive/50 text-destructive"
+                }`}
+              >
+                <span className="text-3xl">
+                  {yourDelta !== null && yourDelta > 0 ? "✅" : "❌"}
+                </span>
+                <span>
+                  {yourDelta !== null && yourDelta > 0
+                    ? `أحسنت! +${yourDelta} نقطة`
+                    : "خانك الحظ!"}
+                </span>
+              </motion.div>
+
+              {/* Correct answer */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18 }}
+                className="w-full text-center"
+              >
+                <p className="text-xs text-muted-foreground mb-1 font-medium">الإجابة الصحيحة</p>
+                <div className="bg-green-500/15 border-2 border-green-500/50 rounded-xl px-4 py-2.5">
+                  <p className="text-base md:text-lg font-black text-green-400">
+                    {question.options[correctIndex]}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Explanation */}
+              {explanation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.26 }}
+                  className="w-full"
+                >
+                  <Card className="bg-primary/10 border-primary/30">
+                    <CardContent className="p-3 md:p-4 text-center">
+                      <p className="text-sm md:text-base font-bold text-primary leading-relaxed">{explanation}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Live scores */}
+              {scores.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                  className="w-full"
+                >
+                  <p className="text-xs text-muted-foreground text-center mb-2 font-medium">النتائج الآن</p>
+                  <div className="flex flex-col gap-1.5">
+                    {scores.map((s, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
+                          s.name === playerName
+                            ? "bg-primary/10 border-primary/40"
+                            : "bg-card/60 border-border/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-muted-foreground w-5 text-center">
+                            {i + 1}
+                          </span>
+                          <span className={`font-bold text-sm ${s.name === playerName ? "text-primary" : "text-foreground"}`}>
+                            {s.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-foreground">{s.score}</span>
+                          {s.delta > 0 && (
+                            <span className="text-green-500 font-bold text-xs bg-green-500/15 px-1.5 py-0.5 rounded-full">
+                              +{s.delta}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              <p className="text-xs text-muted-foreground animate-pulse pb-2">السؤال التالي قريباً...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Score float */}
       <AnimatePresence>
