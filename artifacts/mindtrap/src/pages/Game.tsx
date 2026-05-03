@@ -256,7 +256,8 @@ export default function Game() {
   const timeColor = timePercentage > 50 ? "text-green-500" : timePercentage > 25 ? "text-yellow-500" : "text-destructive";
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col p-4 bg-background relative overflow-hidden">
+    <div className="h-[100dvh] w-full flex flex-col bg-background relative overflow-hidden">
+      {/* Ability effect overlay */}
       <AnimatePresence>
         {activeEffect && (
           <motion.div 
@@ -265,52 +266,58 @@ export default function Game() {
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none"
           >
-            <h1 className="text-5xl md:text-7xl font-black text-destructive drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+            <h1 className="text-4xl md:text-6xl font-black text-destructive drop-shadow-[0_0_20px_rgba(255,0,0,0.8)] text-center px-4">
               {activeEffect.message}
             </h1>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center mb-6 z-10">
-        <div className="bg-card px-4 py-2 rounded-xl border border-border shadow-sm">
-          <span className="font-bold text-muted-foreground text-sm">سؤال</span>
-          <div className="text-2xl font-black text-primary">{questionNumber} / {totalQuestions}</div>
+      {/* ── HEADER ── */}
+      <div className="flex justify-between items-center px-4 pt-3 pb-2 z-10 shrink-0">
+        {/* Question counter */}
+        <div className="bg-card px-3 py-1.5 rounded-xl border border-border shadow-sm">
+          <span className="font-bold text-muted-foreground text-xs">سؤال</span>
+          <div className="text-xl font-black text-primary leading-none">{questionNumber} / {totalQuestions}</div>
         </div>
 
-        <div className="relative w-20 h-20 flex items-center justify-center">
+        {/* Timer circle */}
+        <div className="relative w-16 h-16 flex items-center justify-center">
           <svg className="absolute inset-0 w-full h-full -rotate-90">
-            <circle cx="40" cy="40" r="36" className="stroke-muted fill-none" strokeWidth="8" />
+            <circle cx="32" cy="32" r="28" className="stroke-muted fill-none" strokeWidth="6" />
             <circle 
-              cx="40" cy="40" r="36" 
+              cx="32" cy="32" r="28"
               className={`fill-none transition-all duration-100 ${timeColor} stroke-current`} 
-              strokeWidth="8" 
-              strokeDasharray="226" 
-              strokeDashoffset={226 - (226 * timePercentage) / 100}
+              strokeWidth="6" 
+              strokeDasharray="176" 
+              strokeDashoffset={176 - (176 * timePercentage) / 100}
               strokeLinecap="round"
             />
           </svg>
-          <span className={`text-2xl font-black ${timeColor}`}>{Math.ceil(timeLeft)}</span>
+          <span className={`text-xl font-black ${timeColor}`}>{Math.ceil(timeLeft)}</span>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center z-10 gap-8 max-w-3xl w-full mx-auto">
+      {/* ── QUESTION ── */}
+      <div className="px-4 z-10 shrink-0">
         <motion.div 
           key={question.id}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full text-center"
         >
-          <Card className="bg-card/80 backdrop-blur-md border-border shadow-xl">
-            <CardContent className="p-8">
-              <h2 className="text-3xl md:text-4xl font-black leading-tight text-foreground">
+          <Card className="bg-card/90 backdrop-blur-md border-border shadow-lg">
+            <CardContent className="p-4 md:p-6">
+              <h2 className="text-xl md:text-2xl font-black leading-snug text-foreground text-center">
                 {question.text}
               </h2>
             </CardContent>
           </Card>
         </motion.div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+      {/* ── ANSWERS ── */}
+      <div className="flex-1 px-4 py-3 z-10 overflow-y-auto">
+        <div className="grid grid-cols-2 gap-3 h-full max-w-3xl mx-auto">
           {question.options.map((opt, i) => {
             let btnClass = "bg-card hover:bg-card/80 border-border text-foreground";
             let anim = {};
@@ -323,18 +330,18 @@ export default function Game() {
                 btnClass = "bg-destructive/20 border-destructive text-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]";
                 anim = { x: [-5, 5, -5, 5, 0] };
               } else {
-                btnClass = "opacity-50 bg-card border-border";
+                btnClass = "opacity-40 bg-card border-border";
               }
             } else if (selectedAnswer === i) {
               btnClass = "bg-primary/20 border-primary text-primary";
             }
 
             return (
-              <motion.div key={i} animate={anim} transition={{ duration: 0.3 }}>
+              <motion.div key={i} animate={anim} transition={{ duration: 0.3 }} className="h-full">
                 <Button
                   onClick={() => handleAnswer(i)}
                   disabled={selectedAnswer !== null || timeLeft <= 0 || correctIndex !== null}
-                  className={`w-full min-h-[80px] h-auto p-4 text-xl md:text-2xl font-bold whitespace-normal rounded-xl border-2 transition-all ${btnClass}`}
+                  className={`w-full h-full min-h-[70px] p-3 text-base md:text-lg font-bold whitespace-normal rounded-xl border-2 transition-all leading-snug ${btnClass}`}
                 >
                   {opt}
                 </Button>
@@ -343,35 +350,37 @@ export default function Game() {
           })}
         </div>
 
+        {/* Explanation */}
         <AnimatePresence>
           {explanation && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full mt-4"
+              className="mt-3 max-w-3xl mx-auto"
             >
               <Card className="bg-primary/10 border-primary/30">
-                <CardContent className="p-4 text-center">
-                  <p className="text-lg font-bold text-primary">{explanation}</p>
+                <CardContent className="p-3 text-center">
+                  <p className="text-base font-bold text-primary">{explanation}</p>
                 </CardContent>
               </Card>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <AnimatePresence>
-          {yourDelta !== null && yourDelta > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 50, scale: 0.5 }}
-              animate={{ opacity: 1, y: -50, scale: 1.5 }}
-              exit={{ opacity: 0 }}
-              className="absolute pointer-events-none text-4xl font-black text-green-500 drop-shadow-md z-50"
-            >
-              +{yourDelta} نقطة!
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* Score float */}
+      <AnimatePresence>
+        {yourDelta !== null && yourDelta > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.5 }}
+            animate={{ opacity: 1, y: -40, scale: 1.4 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 pointer-events-none text-3xl font-black text-green-500 drop-shadow-md z-50"
+          >
+            +{yourDelta} نقطة!
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Target Picker Overlay */}
       <AnimatePresence>
@@ -380,7 +389,7 @@ export default function Game() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm pb-8"
+            className="absolute inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm pb-4"
             onClick={() => setShowTargetPicker(false)}
           >
             <motion.div
@@ -388,14 +397,14 @@ export default function Game() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 200, opacity: 0 }}
               transition={{ type: "spring", damping: 20 }}
-              className="bg-card border border-destructive/50 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-[0_0_40px_rgba(239,68,68,0.3)]"
+              className="bg-card border border-destructive/50 rounded-2xl p-5 w-full max-w-sm mx-4 shadow-[0_0_40px_rgba(239,68,68,0.3)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-black text-destructive text-center mb-2">💣 اختار ضحيتك</h3>
-              <p className="text-sm text-muted-foreground text-center mb-5">
+              <h3 className="text-xl font-black text-destructive text-center mb-1">💣 اختار ضحيتك</h3>
+              <p className="text-sm text-muted-foreground text-center mb-4">
                 ستسرق <span className="text-destructive font-bold">50 نقطة</span> من اللاعب المختار
               </p>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 {otherPlayers.length === 0 ? (
                   <p className="text-center text-muted-foreground text-sm">ما في لاعبين ثانيين</p>
                 ) : (
@@ -407,16 +416,16 @@ export default function Game() {
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => useSabotage(name)}
-                        className="flex items-center justify-between bg-background/60 border border-border hover:border-destructive rounded-xl px-5 py-4 transition-colors group"
+                        className="flex items-center justify-between bg-background/60 border border-border hover:border-destructive rounded-xl px-4 py-3 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center text-lg font-bold text-destructive">
+                          <div className="w-9 h-9 rounded-full bg-destructive/20 flex items-center justify-center text-base font-bold text-destructive">
                             {name.charAt(0)}
                           </div>
-                          <span className="font-bold text-lg">{name}</span>
+                          <span className="font-bold text-base">{name}</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm text-muted-foreground">نقاطه</div>
+                          <div className="text-xs text-muted-foreground">نقاطه</div>
                           <div className="font-black text-foreground">{playerScore?.score ?? "—"}</div>
                         </div>
                       </motion.button>
@@ -426,7 +435,7 @@ export default function Game() {
               </div>
               <Button
                 variant="ghost"
-                className="w-full mt-4 text-muted-foreground"
+                className="w-full mt-3 text-muted-foreground"
                 onClick={() => setShowTargetPicker(false)}
               >
                 إلغاء
@@ -436,81 +445,88 @@ export default function Game() {
         )}
       </AnimatePresence>
 
-      <div className="mt-8 pt-4 border-t border-border z-10">
-        <div className="flex justify-between items-end gap-4">
-          <div className="flex gap-2 flex-wrap">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative"
+      {/* ── BOTTOM BAR ── */}
+      <div className="shrink-0 px-4 pb-3 pt-2 border-t border-border z-10">
+        <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+
+          {/* All 4 ability buttons in one row */}
+          <div className="flex gap-2">
+            {/* Confuse */}
+            <button
               onClick={() => useAbility('confuse')}
               disabled={abilities.confuse <= 0}
               title="تشويش"
+              className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
+                ${abilities.confuse > 0 ? "bg-card border-border hover:border-primary active:scale-95" : "bg-card/40 border-border/40 opacity-40"}`}
             >
-              <span className="text-2xl">😵</span>
-              <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
+              <span className="text-xl">😵</span>
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
+                ${abilities.confuse > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {abilities.confuse}
               </span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative"
+            </button>
+
+            {/* Freeze */}
+            <button
               onClick={() => useAbility('freeze')}
               disabled={abilities.freeze <= 0}
               title="تجميد"
+              className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
+                ${abilities.freeze > 0 ? "bg-card border-border hover:border-primary active:scale-95" : "bg-card/40 border-border/40 opacity-40"}`}
             >
-              <span className="text-2xl">❄️</span>
-              <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
+              <span className="text-xl">❄️</span>
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
+                ${abilities.freeze > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {abilities.freeze}
               </span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-14 h-14 rounded-full bg-card relative"
+            </button>
+
+            {/* Reverse */}
+            <button
               onClick={() => useAbility('reverse')}
               disabled={abilities.reverse <= 0}
               title="انعكاس"
+              className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
+                ${abilities.reverse > 0 ? "bg-card border-border hover:border-primary active:scale-95" : "bg-card/40 border-border/40 opacity-40"}`}
             >
-              <span className="text-2xl">🔄</span>
-              <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-bold flex items-center justify-center">
+              <span className="text-xl">🔄</span>
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
+                ${abilities.reverse > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {abilities.reverse}
               </span>
-            </Button>
-            {/* Sabotage — targeted ability */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className={`w-14 h-14 rounded-full relative transition-all ${
-                abilities.sabotage > 0
-                  ? "bg-destructive/10 border-destructive/50 hover:bg-destructive/20 hover:border-destructive shadow-[0_0_12px_rgba(239,68,68,0.3)]"
-                  : "bg-card opacity-40"
-              }`}
+            </button>
+
+            {/* Sabotage — right next to the others */}
+            <button
               onClick={() => abilities.sabotage > 0 && setShowTargetPicker(true)}
               disabled={abilities.sabotage <= 0}
               title="تخريب"
+              className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
+                ${abilities.sabotage > 0
+                  ? "bg-destructive/10 border-destructive/60 hover:bg-destructive/20 active:scale-95 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
+                  : "bg-card/40 border-border/40 opacity-40"}`}
             >
-              <span className="text-2xl">💣</span>
-              <span className={`absolute -top-2 -right-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
-              }`}>
+              <span className="text-xl">💣</span>
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
+                ${abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"}`}>
                 {abilities.sabotage}
               </span>
-            </Button>
+            </button>
           </div>
 
-          <div className="flex flex-col gap-2 w-1/2 max-w-xs">
+          {/* Live scores (top 3) */}
+          <div className="flex flex-col gap-1 min-w-0">
             {scores.slice(0, 3).map((score, i) => (
-              <div key={i} className="flex justify-between items-center text-sm">
-                <span className="font-bold truncate max-w-[80px]">{score.name}</span>
-                <div className="flex items-center gap-2">
+              <div key={i} className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-bold truncate max-w-[70px] text-foreground">{score.name}</span>
+                <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">{score.score}</span>
                   {score.delta > 0 && <span className="text-green-500 font-bold">+{score.delta}</span>}
                 </div>
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </div>
