@@ -207,11 +207,18 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
           return;
         }
 
+        // Sabotage cap: max 2 uses per game
+        if (ability === "sabotage" && player.sabotageUsedCount >= 2) {
+          socket.emit("error", { message: "استخدمت التخريب مرتين — انتهى رصيدك!" });
+          return;
+        }
+
         player.abilities[ability]--;
         player.abilitiesUsed++;
 
         // Sabotage: steal 50 points from target (minimum 0)
         if (ability === "sabotage") {
+          player.sabotageUsedCount++;
           const stolen = Math.min(target.score, 50);
           target.score = Math.max(0, target.score - stolen);
           player.score += stolen;
@@ -436,18 +443,24 @@ function sendQuestionResult(io: SocketIOServer, roomCode: string, questionId: st
     const answer = player.answers.find((a) => a.questionId === questionId);
     const answeredCorrectly = answer?.correct ?? false;
 
-    if (answeredCorrectly && player.abilities.sabotage === 0) {
-      // Correct answer → unlock sabotage
+    if (answeredCorrectly && player.abilities.sabotage === 0 && player.sabotageUsedCount < 2) {
+      // Correct answer → unlock sabotage (only if cap not reached)
       player.abilities.sabotage = 1;
     } else if (!answeredCorrectly && player.abilities.sabotage > 0) {
       // Wrong / no answer → forfeit sabotage
       player.abilities.sabotage = 0;
+    } else if (player.sabotageUsedCount >= 2) {
+      // Cap reached → always lock it
+      player.abilities.sabotage = 0;
     }
 
-    // Notify this player of their updated abilities
+    // Notify this player of their updated abilities + sabotage cap info
     const playerSocket = io.sockets.sockets.get(player.socketId);
     if (playerSocket) {
-      playerSocket.emit("ability-update", { abilities: player.abilities });
+      playerSocket.emit("ability-update", {
+        abilities: player.abilities,
+        sabotageUsedCount: player.sabotageUsedCount,
+      });
     }
   }
 

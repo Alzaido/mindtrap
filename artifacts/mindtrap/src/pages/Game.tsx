@@ -42,6 +42,7 @@ export default function Game() {
   const startTimeRef = useRef<number>(0);
 
   const [abilities, setAbilities] = useState({ confuse: 1, freeze: 1, reverse: 1, sabotage: 0 });
+  const [sabotageUsedCount, setSabotageUsedCount] = useState(0);
   const [activeEffect, setActiveEffect] = useState<{ type: string, message: string } | null>(null);
   const [otherPlayers, setOtherPlayers] = useState<string[]>([]);
   const [showTargetPicker, setShowTargetPicker] = useState(false);
@@ -148,8 +149,9 @@ export default function Game() {
       setScores(data.scores);
     });
 
-    socket.on("ability-update", (data: { abilities: typeof abilities }) => {
+    socket.on("ability-update", (data: { abilities: typeof abilities; sabotageUsedCount?: number }) => {
       setAbilities(data.abilities);
+      if (data.sabotageUsedCount !== undefined) setSabotageUsedCount(data.sabotageUsedCount);
     });
 
     socket.on("game-finished", () => {
@@ -629,18 +631,20 @@ export default function Game() {
 
             {/* Sabotage */}
             <button
-              onClick={() => abilities.sabotage > 0 && setShowTargetPicker(true)}
-              disabled={abilities.sabotage <= 0}
-              title={abilities.sabotage > 0 ? "تخريب — اسرق 50 نقطة" : "أجب صح لتفعيل التخريب"}
+              onClick={() => abilities.sabotage > 0 && sabotageUsedCount < 2 && setShowTargetPicker(true)}
+              disabled={abilities.sabotage <= 0 || sabotageUsedCount >= 2}
+              title={sabotageUsedCount >= 2 ? "انتهى التخريب — استخدمته مرتين" : abilities.sabotage > 0 ? "تخريب — اسرق 50 نقطة" : "أجب صح لتفعيل التخريب"}
               className={`relative w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all
-                ${abilities.sabotage > 0
-                  ? "bg-destructive/10 border-destructive/60 hover:bg-destructive/20 active:scale-95 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
-                  : "bg-card/40 border-border/40 opacity-40"}`}
+                ${sabotageUsedCount >= 2
+                  ? "bg-card/20 border-border/20 opacity-25 cursor-not-allowed"
+                  : abilities.sabotage > 0
+                    ? "bg-destructive/10 border-destructive/60 hover:bg-destructive/20 active:scale-95 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
+                    : "bg-card/40 border-border/40 opacity-40"}`}
             >
               <span className="text-xl">💣</span>
               <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center
-                ${abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"}`}>
-                {abilities.sabotage}
+                ${sabotageUsedCount >= 2 ? "bg-muted/50 text-muted-foreground" : abilities.sabotage > 0 ? "bg-destructive text-white" : "bg-muted text-muted-foreground"}`}>
+                {sabotageUsedCount >= 2 ? "✕" : `${2 - sabotageUsedCount}`}
               </span>
             </button>
           </div>

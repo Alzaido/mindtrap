@@ -31,6 +31,7 @@ export interface Player {
   answers: PlayerAnswer[];
   frozenUntil?: number;
   abilitiesUsed: number;
+  sabotageUsedCount: number;
   disconnected?: boolean;
 }
 
@@ -98,6 +99,7 @@ export function createRoom(
     socketId: "",
     answers: [],
     abilitiesUsed: 0,
+    sabotageUsedCount: 0,
   };
 
   room.players.set(hostName, hostPlayer);
@@ -143,6 +145,7 @@ export function addPlayer(
     socketId,
     answers: [],
     abilitiesUsed: 0,
+    sabotageUsedCount: 0,
   };
 
   room.players.set(playerName, player);
